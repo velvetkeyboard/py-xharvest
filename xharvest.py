@@ -1,14 +1,19 @@
+from datetime import date
+from datetime import timedelta
 from decimal import getcontext
 from decimal import Decimal
 import gi
-from gi.repository import Gtk
-
 gi.require_version("Gtk", "3.0")
-
+from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import GLib
 
-getcontext().prec = 2
+from harvest.services import UsersAllAssignments
+from harvest.services import Today
+from harvest.services import SingleDayTimeEntries
+from harvest.services import MonthTimeEntries
+
+getcontext().prec = 3
 COUNTER = 0
 TIME_ENTRIES = []
 TIMER_RUNNING = None
@@ -63,70 +68,206 @@ class TimeEntry(object):
         button.get_parent()
 
 
-class Handler(object):
+class Task(object):
+    def __init__(self, _id, name):
+        self.id = _id
+        self.name = name
 
-    def quit(self, *args):
-        Gtk.main_quit()
 
-    def hello(self, button):
-        print("Hello World!")
-        builder = Gtk.Builder()
-        # builder.add_objects_from_file("time_entry.xml", ("gtkBoxTimeEntryWrapper",))
-        builder.add_objects_from_file("time_entry.xml")
-        listbox_timeentries = builder.get_object("gtkListBoxTimeEntries")
-        # listbox_timeentries = builder.get_object("gtkScrolledWindowTimeEntries")
-        # timeentrywrapper = builder.get_object("gtkBoxTimeEntryWrapper")
-        button_toggletimer = builder.get_object("gtkButtonToggleTimer")
-        timeentry = TimeEntry()
-        button_toggletimer.connect("clicked", timeentry.toggle_timer)
-        listbox_timeentries.add(timeentrywrapper)
+class Project(object):
+    def __init__(self, _id, name, tasks=None):
+        self.id = _id
+        self.name = name
+        self.tasks = tasks or []
 
 
 class App(object):
 
     def __init__(self):
         self.builder = Gtk.Builder()
-        self.builder.add_from_file("main.xml")
-        self.builder.connect_signals(self)
 
     def start(self):
-        window = self.builder.get_object("window1")
+        self.builder.add_from_file("main.glade")
+        self.builder.connect_signals(self)
+        # Initial Setup
+        self.selected_date = date.today()
+        self.sync_weekdays()
+        self.builder.get_object("gtkLabelWeekNumber").set_label(f"{self.get_week_number()}")
+        resp = Today().all()
+        self.time_entries = resp['time_entries']
+        self.sync_selected_date_timeentries()
+        # import json
+        # print(json.dumps(self.time_entries, indent=2))
+        window = self.builder.get_object("main_window")
+        self.get_month_hours()
         window.show_all()
         Gtk.main()
+
+    def sync_weekdays(self):
+        label_mon = self.builder.get_object("gtkLabelMonday")
+        label_tue = self.builder.get_object("gtkLabelTuesday")
+        label_wed = self.builder.get_object("gtkLabelWednesday")
+        label_thu = self.builder.get_object("gtkLabelThursday")
+        label_fri = self.builder.get_object("gtkLabelFriday")
+        label_sat = self.builder.get_object("gtkLabelSaturday")
+        label_sun = self.builder.get_object("gtkLabelSunday")
+        today = self.selected_date
+        self.dates = [today + timedelta(days=i) for i in range(0 - today.weekday(), 7 - today.weekday())]
+        label_mon.set_label(f"Mon\n{self.dates[0].day:02d}/{self.dates[0].month:02d}")
+        label_tue.set_label(f"Tue\n{self.dates[1].day:02d}/{self.dates[1].month:02d}")
+        label_wed.set_label(f"Wed\n{self.dates[2].day:02d}/{self.dates[2].month:02d}")
+        label_thu.set_label(f"Thu\n{self.dates[3].day:02d}/{self.dates[3].month:02d}")
+        label_fri.set_label(f"Fri\n{self.dates[4].day:02d}/{self.dates[4].month:02d}")
+        label_sat.set_label(f"Sat\n{self.dates[5].day:02d}/{self.dates[5].month:02d}")
+        label_sun.set_label(f"Sun\n{self.dates[6].day:02d}/{self.dates[6].month:02d}")
 
     def quit(self, *args):
         Gtk.main_quit()
 
+    def toggle_hours_count(self, button):
+        print('toggle_hours_count')
+
+    def edit_timeentry(self, button):
+        print('edit_timeentry')
+
+    def delete_timeentry(self, event_box, event_button):
+        print('delete_timeentry')
+        print(event_box.get_name())
+
+    def get_week_number(self):
+        return self.selected_date.isocalendar()[1]
+
+    def get_last_week_timeentries(self, event_box, event_button):
+        self.selected_date = self.selected_date - timedelta(days=7)
+        self.sync_weekdays()
+
+    def get_next_week_timeentries(self, event_box, event_button):
+        self.selected_date = self.selected_date + timedelta(days=7)
+        self.sync_weekdays()
+
     def get_timeentry_list(self):
         return self.builder.get_object("gtkListBoxTimeEntries")
 
-    def hello(self, button):
+    def get_month_hours(self):
+        svc = MonthTimeEntries()
+        svc.set_month(
+            self.selected_date.year, self.selected_date.month)
+        resp = svc.all()
+        month_hours = Decimal(0)
+        for entry in resp['time_entries']:
+            month_hours += Decimal(entry['hours'])
+        self.builder.get_object("gtkLabelMonthHours").set_label(str(month_hours))
+
+    def combobox_projects_on_change(self, combobox_text):
+        text = combobox_text.get_active_text()
+        combobox_tasks = self.builder.get_object("gtkComboBoxTextTasks")
+        combobox_tasks.remove_all()
+        for task in self.project_assignments[text].tasks:
+            combobox_tasks.append_text(task.name)
+
+    def get_monday_timeentries(self, event_box, event_button):
+        self.selected_date = self.dates[0]
+        self.sync_selected_date_timeentries()
+        # label = event_box.get_child()
+
+    def get_tuesday_timeentries(self, event_box, event_button):
+        self.selected_date = self.dates[1]
+        self.sync_selected_date_timeentries()
+
+    def get_wednesday_timeentries(self, event_box, event_button):
+        self.selected_date = self.dates[2]
+        self.sync_selected_date_timeentries()
+
+    def get_thursday_timeentries(self, event_box, event_button):
+        self.selected_date = self.dates[3]
+        self.sync_selected_date_timeentries()
+
+    def get_friday_timeentries(self, event_box, event_button):
+        self.selected_date = self.dates[4]
+        self.sync_selected_date_timeentries()
+
+    def get_saturday_timeentries(self, event_box, event_button):
+        self.selected_date = self.dates[5]
+        self.sync_selected_date_timeentries()
+
+    def get_sunday_timeentries(self, event_box, event_button):
+        self.selected_date = self.dates[6]
+        self.sync_selected_date_timeentries()
+
+    def add_new_timeentry(self, button):
+        # builder = Gtk.Builder()
+        # builder.add_from_file("new_time_entry.glade")
+        newtimeentry_dialog = self.builder.get_object("gtkDialogNewTimeEntry")
+        combobox_projects = self.builder.get_object("gtkComboBoxTextProjects")
+        self.project_assignments = {}
+
+        resp = UsersAllAssignments(cfg='harvest.cfg').all()
+
+        for assignment in resp:
+            tasks = []
+            for task in assignment['task_assignments']:
+                tasks.append(Task(
+                    task['task']['id'],
+                    task['task']['name'],
+                ))
+            p = Project(
+                _id=assignment['project']['id'],
+                name=assignment['project']['name'],
+                tasks=tasks,
+            )
+            self.project_assignments[assignment['project']['name']] = p
+            combobox_projects.append_text(assignment['project']['name'])
+
+        newtimeentry_dialog.run()
+
+    def sync_selected_date_timeentries(self):
+        svc = SingleDayTimeEntries()
+        svc.set_date(self.selected_date.isoformat())
+        resp = svc.all()
+        children = self.get_timeentry_list().get_children()#.remove_all()
+        for child in children:
+            self.get_timeentry_list().remove(child)
+        day_hours = Decimal(0)
+        for entry in resp['time_entries']:
+            print(entry)
+            day_hours += Decimal(entry['hours'])
+            self.insert_timeentry_widget(entry)
+        self.builder.get_object("gtkLabelTodayHours").set_label(str(day_hours))
+
+    def insert_timeentry_widget(self, timeentry_entity):
         builder = Gtk.Builder()
-        builder.add_from_file("time_entry.xml")
-
+        builder.add_from_file("main.glade")
+        builder.connect_signals(self)
         timeentry_wrapper = builder.get_object("gtkBoxTimeEntryWrapper")
-        desc = builder.get_object("gtkTextViewTimeEntryDescription")
-        label_timer = builder.get_object("gtkLabelTimer")
-        button_toggletimer = builder.get_object("gtkButtonToggleTimer")
-        delete_timeentry = builder.get_object("gtkEventBoxDeleteTimeEntry")
+        # notes = builder.get_object("gtkTextViewTimeEntryDescription")
+        builder.get_object("gtkTextViewTimeEntryNotes").set_markup('<i>{}</i>'.format(timeentry_entity['notes']))
+        # notes.set_monospace(True)
+        # notes_buffer = notes.get_buffer()
+        # notes_buffer.set_text('{}...'.format(timeentry_entity['notes'][:100]))
+        hours = builder.get_object("gtkLabelTimer")
+        hours.set_label(str(timeentry_entity['hours']))
+        builder.get_object("gtkLabelTimeEntryTaskAndProjectName").set_markup(
+            f"<b>{timeentry_entity['project']['name']} - {timeentry_entity['task']['name']}</b>")
+        remove_timeentry = builder.get_object("gtkEventBoxRemoveTimeEntry")
+        remove_timeentry.set_name(str(timeentry_entity['id']))
+        # builder.get_object("gtkLabelTimeEntryTaskAndProjectName").set_markup(
+        #     f"<b>{timeentry_entity['project']['name']}</b>")
+        # button_toggletimer = builder.get_object("gtkButtonToggleTimer")
+        # delete_timeentry = builder.get_object("gtkEventBoxDeleteTimeEntry")
 
-        timeentry = TimeEntry()
-        timeentry.label = label_timer
+        # timeentry = TimeEntry()
+        # timeentry.label = label_timer
 
-        desc.connect("focus", timeentry.edit_text)
-        button_toggletimer.connect("clicked", timeentry.toggle_timer)
-        remove_entry_fn = lambda btn, x: self.get_timeentry_list().remove(timeentry_wrapper.get_parent())
+        # desc.connect("focus", timeentry.edit_text)
+        # button_toggletimer.connect("clicked", timeentry.toggle_timer)
+        # remove_entry_fn = lambda btn, x: self.get_timeentry_list().remove(timeentry_wrapper.get_parent())
 
-        delete_timeentry.connect("button-release-event", remove_entry_fn)
+        # delete_timeentry.connect("button-release-event", remove_entry_fn)
 
-        timeentrywrapper = builder.get_object("gtkBoxTimeEntryWrapper")
-        self.get_timeentry_list().add(timeentrywrapper)
+        # timeentrywrapper = builder.get_object("gtkBoxTimeEntryWrapper")
+        self.get_timeentry_list().add(timeentry_wrapper)
 
-# builder.add_objects_from_file("time_entry.xml", ("gtkBoxTimeEntryWrapper",))
 
-# help(listbox_timeentries)
-#timeentrywrapper = builder.get_object("gtkBoxTimeEntryWrapper")
-#listbox_timeentries.add(timeentrywrapper)
-
-app = App()
-app.start()
+if __name__ == '__main__':
+    app = App()
+    app.start()
