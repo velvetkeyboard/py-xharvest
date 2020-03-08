@@ -8,10 +8,15 @@ from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import GLib
 
+from harvest.auth import PersonalAccessAuthClient
+from harvest.api import TimeEntry
+from harvest.api import TimeEntryStop
+from harvest.api import TimeEntryRestart
 from harvest.services import UsersAllAssignments
 from harvest.services import Today
 from harvest.services import SingleDayTimeEntries
 from harvest.services import MonthTimeEntries
+from harvest.services import CurrentUser
 
 getcontext().prec = 3
 COUNTER = 0
@@ -19,7 +24,7 @@ TIME_ENTRIES = []
 TIMER_RUNNING = None
 
 
-class TimeEntry(object):
+class TimeEntryOld(object):
 
     def __init__(self):
         self.description = ''
@@ -80,15 +85,22 @@ class Project(object):
         self.name = name
         self.tasks = tasks or []
 
+    def get_task_by_name(self, name):
+        for task in self.tasks:
+            if task.name == name:
+                return task
 
 class App(object):
 
     def __init__(self):
         self.builder = Gtk.Builder()
+        self.client_auth = PersonalAccessAuthClient()
 
     def start(self):
         self.builder.add_from_file("main.glade")
         self.builder.connect_signals(self)
+        self.user = CurrentUser().get()
+        print(self.user)
         # Initial Setup
         self.selected_date = date.today()
         self.sync_weekdays()
@@ -124,8 +136,88 @@ class App(object):
     def quit(self, *args):
         Gtk.main_quit()
 
+    def create_new_entry(self, button):
+        project_name = self.builder.get_object("gtkComboBoxTextNewTimeEntryProject").get_active_text()
+        task_name = self.builder.get_object("gtkComboBoxTextNewTimeEntryTask").get_active_text()
+        notes_buffer = self.builder.get_object("gtkComboBoxTextNewTimeEntryNotes").get_buffer()
+        start_iter = notes_buffer.get_start_iter()
+        end_iter = notes_buffer.get_end_iter()
+        notes = notes_buffer.get_text(start_iter, end_iter, True)
+        spent_date = self.selected_date.isoformat()
+        hours = 0.01
+        project = self.project_assignments[project_name]
+        project_id = project.id
+        task_id = project.get_task_by_name(task_name).id
+        data = {
+            'user_id': self.user['id'],
+            'notes': notes,
+            'spent_date': spent_date,
+            'task_id': task_id,
+            'project_id': project_id,
+            'hours': hours,
+        }
+        print(data)
+        resp = TimeEntry(client=self.client_auth).post(data=data)
+        print(resp.json())
+
+    def show_new_timeentry_dialog(self, button):
+        # builder = Gtk.Builder()
+        # builder.add_from_file("new_time_entry.glade")
+        newtimeentry_dialog = self.builder.get_object("gtkDialogNewTimeEntry")
+        combobox_projects = self.builder.get_object("gtkComboBoxTextNewTimeEntryProject")
+
+        self.project_assignments = {}
+
+        resp = UsersAllAssignments(cfg='harvest.cfg').all()
+
+        for assignment in resp:
+            tasks = []
+            for task in assignment['task_assignments']:
+                tasks.append(Task(
+                    task['task']['id'],
+                    task['task']['name'],
+                ))
+            p = Project(
+                _id=assignment['project']['id'],
+                name=assignment['project']['name'],
+                tasks=tasks,
+            )
+            self.project_assignments[assignment['project']['name']] = p
+            combobox_projects.append_text(assignment['project']['name'])
+
+        newtimeentry_dialog.run()
+
+    def hide_new_timeentry_dialog(self, button):
+        self.project_assignments = {}
+        self.builder.get_object("gtkComboBoxTextNewTimeEntryProject").remove_all()
+        self.builder.get_object("gtkComboBoxTextNewTimeEntryTask").remove_all()
+        self.builder.get_object("gtkComboBoxTextNewTimeEntryNotes").get_buffer().set_text('')
+        self.builder.get_object("gtkDialogNewTimeEntry").hide()
+        # self.builder.get_object("gtkDialogNewTimeEntry").emit("close")
+
+    def combobox_projects_on_change(self, combobox_text):
+        if self.project_assignments:
+            text = combobox_text.get_active_text()
+            combobox_tasks = self.builder.get_object("gtkComboBoxTextNewTimeEntryTask")
+            combobox_tasks.remove_all()
+            for task in self.project_assignments[text].tasks:
+                combobox_tasks.append_text(task.name)
+
+    def get_timeentry_list(self):
+        return self.builder.get_object("gtkListBoxTimeEntries")
+
+    # --(Time Entries Management)----------------------------------------------
+
     def toggle_hours_count(self, button):
         print('toggle_hours_count')
+        time_entry_id = button.get_name()
+        resp = TimeEntryUpdate(self.client, time_entry_id=time_entry_id).get()
+        if resp.status_code == 200:
+            if resp.json()['is_running']:
+                resp = TimeEntryStop(self.client, time_entry_id=time_entry_id).patch()
+            else:
+                resp = TimeEntryRestart(self.client, time_entry_id=time_entry_id).patch()
+            resp.json()['rounded_hours']
 
     def edit_timeentry(self, button):
         print('edit_timeentry')
@@ -133,6 +225,8 @@ class App(object):
     def delete_timeentry(self, event_box, event_button):
         print('delete_timeentry')
         print(event_box.get_name())
+
+    # --(Week Calender Management)---------------------------------------------
 
     def get_week_number(self):
         return self.selected_date.isocalendar()[1]
@@ -145,9 +239,6 @@ class App(object):
         self.selected_date = self.selected_date + timedelta(days=7)
         self.sync_weekdays()
 
-    def get_timeentry_list(self):
-        return self.builder.get_object("gtkListBoxTimeEntries")
-
     def get_month_hours(self):
         svc = MonthTimeEntries()
         svc.set_month(
@@ -157,13 +248,6 @@ class App(object):
         for entry in resp['time_entries']:
             month_hours += Decimal(entry['hours'])
         self.builder.get_object("gtkLabelMonthHours").set_label(str(month_hours))
-
-    def combobox_projects_on_change(self, combobox_text):
-        text = combobox_text.get_active_text()
-        combobox_tasks = self.builder.get_object("gtkComboBoxTextTasks")
-        combobox_tasks.remove_all()
-        for task in self.project_assignments[text].tasks:
-            combobox_tasks.append_text(task.name)
 
     def get_monday_timeentries(self, event_box, event_button):
         self.selected_date = self.dates[0]
@@ -194,32 +278,6 @@ class App(object):
         self.selected_date = self.dates[6]
         self.sync_selected_date_timeentries()
 
-    def add_new_timeentry(self, button):
-        # builder = Gtk.Builder()
-        # builder.add_from_file("new_time_entry.glade")
-        newtimeentry_dialog = self.builder.get_object("gtkDialogNewTimeEntry")
-        combobox_projects = self.builder.get_object("gtkComboBoxTextProjects")
-        self.project_assignments = {}
-
-        resp = UsersAllAssignments(cfg='harvest.cfg').all()
-
-        for assignment in resp:
-            tasks = []
-            for task in assignment['task_assignments']:
-                tasks.append(Task(
-                    task['task']['id'],
-                    task['task']['name'],
-                ))
-            p = Project(
-                _id=assignment['project']['id'],
-                name=assignment['project']['name'],
-                tasks=tasks,
-            )
-            self.project_assignments[assignment['project']['name']] = p
-            combobox_projects.append_text(assignment['project']['name'])
-
-        newtimeentry_dialog.run()
-
     def sync_selected_date_timeentries(self):
         svc = SingleDayTimeEntries()
         svc.set_date(self.selected_date.isoformat())
@@ -229,7 +287,6 @@ class App(object):
             self.get_timeentry_list().remove(child)
         day_hours = Decimal(0)
         for entry in resp['time_entries']:
-            print(entry)
             day_hours += Decimal(entry['hours'])
             self.insert_timeentry_widget(entry)
         self.builder.get_object("gtkLabelTodayHours").set_label(str(day_hours))
@@ -250,6 +307,9 @@ class App(object):
             f"<b>{timeentry_entity['project']['name']} - {timeentry_entity['task']['name']}</b>")
         remove_timeentry = builder.get_object("gtkEventBoxRemoveTimeEntry")
         remove_timeentry.set_name(str(timeentry_entity['id']))
+
+        toggle_timeentry = builder.get_object("gtkEventBoxToggleHoursCountTimeEntry")
+        toggle_timeentry.set_name(str(timeentry_entity['id']))
         # builder.get_object("gtkLabelTimeEntryTaskAndProjectName").set_markup(
         #     f"<b>{timeentry_entity['project']['name']}</b>")
         # button_toggletimer = builder.get_object("gtkButtonToggleTimer")

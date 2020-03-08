@@ -17,6 +17,7 @@
           <object class="GtkLabel" id="gtkLabelTimeEntryTaskAndProjectName">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="halign">start</property>
             <property name="label" translatable="yes">label</property>
             <property name="ellipsize">end</property>
           </object>
@@ -30,6 +31,7 @@
           <object class="GtkLabel" id="gtkTextViewTimeEntryNotes">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="halign">start</property>
             <property name="label" translatable="yes">label</property>
             <property name="wrap">True</property>
           </object>
@@ -64,7 +66,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkEventBox">
+          <object class="GtkEventBox" id="gtkEventBoxToggleHoursCountTimeEntry">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <signal name="button-press-event" handler="toggle_hours_count" swapped="no"/>
@@ -144,11 +146,12 @@
             <property name="can_focus">False</property>
             <property name="layout_style">end</property>
             <child>
-              <object class="GtkButton">
+              <object class="GtkButton" id="gtkButtonCancelNewTimeEntry">
                 <property name="label" translatable="yes">Cancel</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <signal name="clicked" handler="hide_new_timeentry_dialog" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -157,11 +160,12 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton">
+              <object class="GtkButton" id="gtkButtonSaveNewTimeEntry">
                 <property name="label" translatable="yes">Save</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <signal name="clicked" handler="create_new_entry" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -180,21 +184,25 @@
           <object class="GtkViewport">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="shadow_type">none</property>
             <child>
               <object class="GtkBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="margin_left">5</property>
+                <property name="margin_right">5</property>
                 <property name="margin_top">5</property>
                 <property name="margin_bottom">5</property>
                 <property name="hexpand">False</property>
                 <property name="vexpand">True</property>
                 <property name="orientation">vertical</property>
-                <property name="spacing">10</property>
+                <property name="spacing">5</property>
                 <child>
-                  <object class="GtkComboBoxText" id="gtkComboBoxTextProjects">
+                  <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <signal name="changed" handler="combobox_projects_on_change" swapped="no"/>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">Projects</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -203,9 +211,10 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkComboBoxText" id="gtkComboBoxTextTasks">
+                  <object class="GtkComboBoxText" id="gtkComboBoxTextNewTimeEntryProject">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <signal name="changed" handler="combobox_projects_on_change" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -214,7 +223,44 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkTextView">
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">Tasks</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkComboBoxText" id="gtkComboBoxTextNewTimeEntryTask">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">Notes</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">4</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkTextView" id="gtkComboBoxTextNewTimeEntryNotes">
                     <property name="height_request">65</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -222,7 +268,7 @@
                   <packing>
                     <property name="expand">True</property>
                     <property name="fill">True</property>
-                    <property name="position">2</property>
+                    <property name="position">5</property>
                   </packing>
                 </child>
               </object>
@@ -742,7 +788,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">True</property>
-            <signal name="clicked" handler="add_new_timeentry" swapped="no"/>
+            <signal name="clicked" handler="show_new_timeentry_dialog" swapped="no"/>
           </object>
           <packing>
             <property name="expand">False</property>
