@@ -1,0 +1,17 @@
+version: '3.7'
+
+services:
+    app:
+        image: vyscond/xharvest:local
+        build:
+            context: .
+            dockerfile: Dockerfile
+        command: bash
+        tty: true
+        environment:
+            DISPLAY: $DISPLAY
+            HARVEST_CFG: /usr/src/app/harvest.cfg
+        working_dir: /usr/src/app/
+        volumes:
+            - ./:/usr/src/app:Z
+            - /tmp/.X11-unix:/tmp/.X11-unix:Z
