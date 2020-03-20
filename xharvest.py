@@ -1,76 +1,239 @@
+# Core
+import os
+import time
+import logging
+import calendar
+import threading
+import urllib.parse
+from operator import itemgetter
 from datetime import date
+from datetime import datetime
 from datetime import timedelta
 from decimal import getcontext
 from decimal import Decimal
+from configparser import ConfigParser
+
+import keyring
+
+# GTK
 import gi
 gi.require_version("Gtk", "3.0")
+gi.require_version('WebKit2', '4.0')
 from gi.repository import Gtk
-from gi.repository import GObject
+from gi.repository import Gdk
 from gi.repository import GLib
+from gi.repository import GObject
+from gi.repository.WebKit2 import WebView
+from gi.repository.WebKit2 import Settings
 
-from harvest.auth import PersonalAccessAuthClient
-from harvest.api import TimeEntry
-from harvest.api import TimeEntryStop
-from harvest.api import TimeEntryRestart
+# Harvest API
+from harvest.credentials import OAuth2Credential
+from harvest.endpoints import OAuth2AccessTokenEndpoint
+from harvest.endpoints import TimeEntryEndpoint
+from harvest.endpoints import TimeEntryUpdateEndpoint
+from harvest.endpoints import TimeEntryStopEndpoint
+from harvest.endpoints import TimeEntryRestartEndpoint
 from harvest.services import UsersAllAssignments
-from harvest.services import Today
+from harvest.services import TodayTimeEntries
 from harvest.services import SingleDayTimeEntries
 from harvest.services import MonthTimeEntries
 from harvest.services import CurrentUser
 
-getcontext().prec = 3
-COUNTER = 0
-TIME_ENTRIES = []
-TIMER_RUNNING = None
+# getcontext().prec = 3
+
+LOGLEVEL = os.environ.get('LOGLEVEL', 'DEBUG')
+
+logging.basicConfig(level=LOGLEVEL)
+logger = logging.getLogger('Harvest App')
 
 
-class TimeEntryOld(object):
+class CustomOAuth2Credential(OAuth2Credential):
 
-    def __init__(self):
-        self.description = ''
-        self.clock_state = 'stopped'
-        self.time = 0
+    def get_headers(self):
+        ret = super(CustomOAuth2Credential, self).get_headers()
+        ret['Harvest-Account-Id'] = keyring.get_password("xharvest", "scope")
+        return ret
+
+
+class OAuth2CredentialManager(object):
+
+    domain = 'https://id.getharvest.com'
+    redirect_domain = 'http://localhost:8118'
+
+    def get_credential(self):
+        access_token = keyring.get_password("xharvest", "access_token")
+        return CustomOAuth2Credential(access_token)
+
+    def set_access_token(self, access_token):
+        keyring.set_password("xharvest", "access_token", access_token)
+
+    def set_refresh_token(self, refresh_token):
+        keyring.set_password("xharvest", "refresh_token", refresh_token)
+
+    def set_expiration(self, expires_in):
+        keyring.set_password("xharvest", "expires_in", expires_in)
+
+    def set_last_request_date(self, date_str):
+        keyring.set_password("xharvest", "last_request_date", date_str)
+
+    def set_scope(self, scope):
+        scope = urllib.parse.unquote(scope)
+        scope = scope.split(':')[1].strip()
+        keyring.set_password("xharvest", "scope", scope)
+
+    def get_client_id(self):
+        return keyring.get_password("xharvest", "client_id")
+
+    def get_client_secret(self):
+        return keyring.get_password("xharvest", "client_secret")
+
+    def get_access_token(self):
+        return keyring.get_password("xharvest", "access_token")
+
+    def get_last_refresh_token(self):
+        return keyring.get_password("xharvest", "refresh_token")
+
+    def get_last_request_date(self):
+        ret = keyring.get_password("xharvest", "last_request_date")
+        if ret:
+            ret = datetime.strptime(ret, "%Y-%m-%dT%H:%M:%S.%f")
+        return ret
+
+    def get_expiration_in_secs(self):
+        return keyring.get_password("xharvest", "expires_in")
+
+    def get_access_token_authorization_url(self):
+        return '{}/oauth2/authorize?client_id={}&response_type=token'.format(
+            self.domain,
+            self.get_client_id())
+
+    def is_access_token_expired(self):
+        if keyring.get_password("xharvest", "access_token"):
+            exp_in_sec = self.get_expiration_in_secs()
+            last_request_date = self.get_last_request_date()
+            if exp_in_sec and last_request_date:
+                exp_delta = timedelta(seconds=int(exp_in_sec))
+                expiration_date = last_request_date + exp_delta
+                if datetime.now() < expiration_date:
+                    return False
+
+        return True
+
+
+class Hour(object):
+
+    HARVEST_MIN = Decimal(1) / Decimal(60)
+    HARVEST_SEC = (Decimal(1) / Decimal(60)) / Decimal(60)
+
+    def __init__(self, value):
+        if '.' in str(value):
+            value = Decimal(value)
+        elif ':' in str(value):
+            hours, mins = value.split(':')
+            value = (self.HARVEST_MIN * hours) + (self.HARVEST_MIN * mins)
+        self.value = Decimal(value)
+
+    def add_sec(self):
+        print('bfr', self.value)
+        self.value += self.HARVEST_SEC
+        print('aft', self.value)
+
+    def add_min(self):
+        self.value += self.HARVEST_MIN
+
+    def __str__(self):
+        return self.value
+
+    def __unicode__(self):
+        return self.value
+
+
+class TimeEntryWrapper(object):
+
+    CHRONOMETER_DELAY = 37
+
+    def __init__(self, time_entry, credential):
+        self.time_entry = time_entry
+        self.time_entry_id = time_entry['id']
+        self.oauth2 = credential
+        proj_name = self.time_entry['project']['name']
+        task_name = self.time_entry['task']['name']
+        builder = Gtk.Builder()
+        builder.add_from_file("time_entry.glade")
+        builder.connect_signals(self)
+        builder.get_object("gtkLabelTimeEntryTaskAndProjectName")\
+                .set_markup(f"<b>{proj_name} - {task_name}</b>")
+        builder.get_object("gtkTextViewTimeEntryNotes")\
+                .set_markup(f"<i>{self.time_entry['notes']}</i>")
+        self.spinner = builder.get_object("spinnerTimeEntryUpdate")
+        self.box = builder.get_object("gtkBoxTimeEntryWrapper")
+        # self.eventbox_toggle = builder.get_object('gtkEventBoxTimeEntryToggleHoursCounter')
+        # self.eventbox_edit = builder.get_object('gtkEventBoxTimeEntryEdit')
+        # self.eventbox_del = builder.get_object('gtkEventBoxTimeEntryRemove')
+        self.label = builder.get_object('gtkLabelTimeEntryHours')
+        self.toggle_img = builder.get_object('imageTimeEntryToggleHours')
+        self.update_hours_label(self.time_entry['hours'])
+        self.hours = Hour(self.time_entry['hours'])
         self.source_remove_id = 0
-        self.label = None
-
-    def clock_tick(self):
-        print('another tick')
-        if self.clock_state == 'running':
-            self.time += 1
-            print(self.time)
-            self.label.set_text('{}:{:02d}'.format(
-                int(self.time / 60),
-                self.time % 60,
-                ))
+        print(f'Is it running? - {self.time_entry["is_running"]}')
+        if self.time_entry['is_running']:
             self.source_remove_id = GLib.timeout_add_seconds(
-                    1, self.clock_tick)
+                        self.CHRONOMETER_DELAY, self.chronometer)
 
-    def toggle_timer(self, button):
-        print('toggling timer')
-        global TIMER_RUNNING
-        if self.clock_state == 'running':
-            self.clock_state = 'stopped'
-            GLib.source_remove(self.source_remove_id)
-            self.source_remove_id = 0
-            button.set_label('Start')
-            TIMER_RUNNING = None
+    def update_hours_label(self, value):
+        self.label.set_markup(f"<b>{value:.2f}</b>")
 
-        elif self.clock_state == 'stopped':
-            if TIMER_RUNNING:
-                TIMER_RUNNING.clock_state = 'stopped'
-                GLib.source_remove(TIMER_RUNNING.source_remove_id)
-                TIMER_RUNNING.source_remove_id = 0
-            self.clock_state = 'running'
+    def refresh_time_entry(self):
+        resp = TimeEntryUpdateEndpoint(
+            credential=self.oauth2,
+            time_entry_id=self.time_entry['id']).get()
+        if resp.status_code == 200:
+            self.time_entry = resp.json()
+
+    def chronometer(self):
+        print('TimeEntryWrapper.chronometer - tick')
+        self.hours.add_sec()
+        print(self.hours.value)
+        self.update_hours_label(self.hours.value)
+        if self.source_remove_id:
             self.source_remove_id = GLib.timeout_add_seconds(
-                    1, self.clock_tick)
-            button.set_label('Stop')
-            TIMER_RUNNING = self
+                self.CHRONOMETER_DELAY, self.chronometer)
 
-    def edit_text(self, *args, **kwargs):
-        print(args)
+    def toggle_chronometer(self, event_box, event_button):
+        self.spinner.start()
+        self.toggle_img.hide()
+        self.refresh_time_entry()
+        print(f'toggle_chronometer - running? - {self.time_entry["is_running"]}')
+        if self.time_entry['is_running']:
+            print(f'toggle_chronometer - stopping')
+            resp = TimeEntryStopEndpoint(
+                    self.oauth2, time_entry_id=self.time_entry['id']).patch()
+            if resp.status_code == 200:
+                self.time_entry = resp.json()
+                self.update_hours_label(self.time_entry['hours'])
+            if self.source_remove_id:
+                GLib.source_remove(self.source_remove_id)
+                self.source_remove_id = 0
 
-    def delete_entry(self, button):
-        button.get_parent()
+        else:
+            print(f'toggle_chronometer - restarting')
+            resp = TimeEntryRestartEndpoint(
+                   self.oauth2, time_entry_id=self.time_entry['id']).patch()
+            print(resp.status_code)
+            if resp.status_code == 200:
+                # self.hours = int(float(resp.json()['hours']) * 100)
+                # self.hours = int(float(self.time_entry['hours']) * 100)
+                self.hours = Hour(self.time_entry['hours'])
+                self.source_remove_id = GLib.timeout_add_seconds(
+                        self.CHRONOMETER_DELAY, self.chronometer)
+        self.spinner.stop()
+        self.toggle_img.show()
+
+    def edit_entry(self, event_box, event_button):
+        print('edit_entry')
+
+    def delete_entry(self, event_box, event_button):
+        print('delete_entry')
 
 
 class Task(object):
@@ -90,87 +253,164 @@ class Project(object):
             if task.name == name:
                 return task
 
+
 class App(object):
 
     def __init__(self):
         self.builder = Gtk.Builder()
-        self.client_auth = PersonalAccessAuthClient()
+        self.oauth2 = OAuth2CredentialManager()
+
+    def run_thread(self, async_fn, async_fn_args, async_cb, async_cb_args):
+        thread = threading.Thread(target=async_fn, args=async_fn_args)
+        thread.daemon = True
+        thread.start()
+        GLib.idle_add(async_cb, *([thread] + async_cb_args))
 
     def start(self):
         self.builder.add_from_file("main.glade")
         self.builder.connect_signals(self)
-        self.user = CurrentUser().get()
-        print(self.user)
-        # Initial Setup
-        self.selected_date = date.today()
-        self.sync_weekdays()
-        self.builder.get_object("gtkLabelWeekNumber").set_label(f"{self.get_week_number()}")
-        resp = Today().all()
-        self.time_entries = resp['time_entries']
-        self.sync_selected_date_timeentries()
-        # import json
-        # print(json.dumps(self.time_entries, indent=2))
-        window = self.builder.get_object("main_window")
-        self.get_month_hours()
-        window.show_all()
+        self.main_window = self.builder.get_object("main_window")
+
+        if self.oauth2.is_access_token_expired():
+            self.show_authentication_window()
+        else:
+            self.show_main_window()
         Gtk.main()
 
-    def sync_weekdays(self):
-        label_mon = self.builder.get_object("gtkLabelMonday")
-        label_tue = self.builder.get_object("gtkLabelTuesday")
-        label_wed = self.builder.get_object("gtkLabelWednesday")
-        label_thu = self.builder.get_object("gtkLabelThursday")
-        label_fri = self.builder.get_object("gtkLabelFriday")
-        label_sat = self.builder.get_object("gtkLabelSaturday")
-        label_sun = self.builder.get_object("gtkLabelSunday")
-        today = self.selected_date
-        self.dates = [today + timedelta(days=i) for i in range(0 - today.weekday(), 7 - today.weekday())]
-        label_mon.set_label(f"Mon\n{self.dates[0].day:02d}/{self.dates[0].month:02d}")
-        label_tue.set_label(f"Tue\n{self.dates[1].day:02d}/{self.dates[1].month:02d}")
-        label_wed.set_label(f"Wed\n{self.dates[2].day:02d}/{self.dates[2].month:02d}")
-        label_thu.set_label(f"Thu\n{self.dates[3].day:02d}/{self.dates[3].month:02d}")
-        label_fri.set_label(f"Fri\n{self.dates[4].day:02d}/{self.dates[4].month:02d}")
-        label_sat.set_label(f"Sat\n{self.dates[5].day:02d}/{self.dates[5].month:02d}")
-        label_sun.set_label(f"Sun\n{self.dates[6].day:02d}/{self.dates[6].month:02d}")
+    # ---( Fetching Data )-----------------------------------------------------
 
-    def quit(self, *args):
-        Gtk.main_quit()
+    def fetch_current_user(self):
+        self.user = CurrentUser(self.oauth2.get_credential()).get()
 
-    def create_new_entry(self, button):
-        project_name = self.builder.get_object("gtkComboBoxTextNewTimeEntryProject").get_active_text()
-        task_name = self.builder.get_object("gtkComboBoxTextNewTimeEntryTask").get_active_text()
-        notes_buffer = self.builder.get_object("gtkComboBoxTextNewTimeEntryNotes").get_buffer()
-        start_iter = notes_buffer.get_start_iter()
-        end_iter = notes_buffer.get_end_iter()
-        notes = notes_buffer.get_text(start_iter, end_iter, True)
-        spent_date = self.selected_date.isoformat()
-        hours = 0.01
-        project = self.project_assignments[project_name]
-        project_id = project.id
-        task_id = project.get_task_by_name(task_name).id
-        data = {
-            'user_id': self.user['id'],
-            'notes': notes,
-            'spent_date': spent_date,
-            'task_id': task_id,
-            'project_id': project_id,
-            'hours': hours,
-        }
-        print(data)
-        resp = TimeEntry(client=self.client_auth).post(data=data)
-        print(resp.json())
+    def fetch_initial_data(self):
+        self.fetch_current_user()
+        self.fetch_timeentries_from_selected_date()
 
-    def show_new_timeentry_dialog(self, button):
-        # builder = Gtk.Builder()
-        # builder.add_from_file("new_time_entry.glade")
+    def fetch_user_assignments(self):
+        self.assignments = UsersAllAssignments(
+                credential=self.oauth2.get_credential()).all()
+
+    def fetch_timeentries_from_selected_date(self):
+        svc = SingleDayTimeEntries(
+            self.oauth2.get_credential(),
+            self.selected_date.isoformat(),
+            )
+        resp = svc.all()
+        self.selected_date_time_entries = resp['time_entries']
+
+    # ---( Fetch Data Callbacks )----------------------------------------------
+
+    def fetch_initial_data_cb(self, thread, *args, **kwargs):
+        if thread.is_alive():
+            return True
+
+        thread.join()
+        self.render_time_entries()
+        self.main_spinner.stop()
+        self.main_spinner.hide()
+
+    def fetch_user_assignments_cb(self, thread, *args, **kwargs):
+        if thread.is_alive():
+            return True
+
+        thread.join()
+        self.render_assignments()
+        self.main_spinner.stop()
+        self.main_spinner.hide()
+
+    # ---( Initial Flows )-----------------------------------------------------
+
+    def webview_navigate(self, web_view, decision, decision_type):
+        # def get_param(webview, val):
+        #     return {
+        #         e.split('=')[0]: e.split('=')[1]
+        #         for e in web_view.get_uri().split('?')[1].split('&')
+        #     }[val]
+
+        uri = web_view.get_uri()
+        if (uri.startswith(self.oauth2.redirect_domain)):
+            decision.ignore()
+            params = uri.split('?')[1].split('&')
+            params = {txt.split('=')[0]: txt.split('=')[1] for txt in params}
+            # Storing Credentials
+            self.oauth2.set_access_token(params['access_token'])
+            self.oauth2.set_expiration(params['expires_in'])
+            self.oauth2.set_last_request_date(datetime.now().isoformat())
+            self.oauth2.set_scope(params['scope'])
+            self.win_oauth2_signin.destroy()
+            # Running Regular Flow
+            self.show_main_window()
+            return True
+        return False
+
+    def show_authentication_window(self):
+        self.win_oauth2_signin = self.builder.get_object("windowHarvestOAuth2Authorization")
+        self.win_oauth2_signin.show_all()
+        webview = self.builder.get_object("webkitwebviewOAuth2Authorization")
+        webview.load_uri(self.oauth2.get_access_token_authorization_url())
+        webview.connect("decide-policy", self.webview_navigate)
+
+    def show_main_window(self):
+        self.selected_date = date.today()
+        self.main_spinner = self.builder.get_object('spinnerTimeEntryList')
+        self.main_spinner.start()
+        self.main_spinner.show()
+
+        # Pulling Time Entries for Today
+        self.run_thread(self.fetch_initial_data, [],
+                        self.fetch_initial_data_cb, [])
+
+        self.render_weekdays()
+        self.builder.get_object("gtkLabelWeekNumber").set_label(f"{self.get_week_number()}")
+        self.main_window.show_all()
+
+    # ---( Common Renderings )-------------------------------------------------
+
+    def render_time_entries(self):
+        children = self.get_timeentry_list().get_children()#.remove_all()
+        for child in children:
+            self.get_timeentry_list().remove(child)
+        day_hours = float(0.0)
+        selected_date_time_entries = self.selected_date_time_entries.sort(
+            key=itemgetter('created_at'))
+        for entry in self.selected_date_time_entries:
+            print(entry['created_at'])
+            day_hours += float(entry['hours'])
+            te = TimeEntryWrapper(entry, self.oauth2.get_credential())
+            self.get_timeentry_list().add(te.box)
+        #self.builder.get_object("gtkLabelTodayTimeEntriesHours")\
+        #    .set_label(f'{day_hours:.02f}')
+
+    def render_weekdays(self):
+        self.selected_week_dates = []
+        week_day_labels = [
+            self.builder.get_object("labelMonday"),
+            self.builder.get_object("labelTuesday"),
+            self.builder.get_object("labelWednesday"),
+            self.builder.get_object("labelThursday"),
+            self.builder.get_object("labelFriday"),
+            self.builder.get_object("labelSaturday"),
+            self.builder.get_object("labelSunday"),
+        ]
+        start = 0 - self.selected_date.weekday()
+        end = 7 - self.selected_date.weekday()
+        for i in range(start, end):
+            wdate = self.selected_date + timedelta(days=i)
+            self.selected_week_dates.append(wdate)
+            wdate_name = calendar.day_name[wdate.weekday()][:3]
+            print(wdate_name, wdate, wdate.weekday())
+            label = f'{wdate_name}\n{wdate.day:02d}/{wdate.month:02d}'
+            if self.selected_date.weekday() == wdate.weekday():
+                week_day_labels[wdate.weekday()].set_markup(f'<b>{label}</b>')
+            else:
+                week_day_labels[wdate.weekday()].set_label(f'{label}')
+
+    def render_assignments(self):
+        self.project_assignments = {}
         newtimeentry_dialog = self.builder.get_object("gtkDialogNewTimeEntry")
         combobox_projects = self.builder.get_object("gtkComboBoxTextNewTimeEntryProject")
 
-        self.project_assignments = {}
-
-        resp = UsersAllAssignments(cfg='harvest.cfg').all()
-
-        for assignment in resp:
+        for assignment in self.assignments:
             tasks = []
             for task in assignment['task_assignments']:
                 tasks.append(Task(
@@ -186,6 +426,46 @@ class App(object):
             combobox_projects.append_text(assignment['project']['name'])
 
         newtimeentry_dialog.run()
+
+    # ---( Time Entries Management )-------------------------------------------
+
+    def create_new_entry(self, button):
+        project_name = self.builder.get_object("gtkComboBoxTextNewTimeEntryProject").get_active_text()
+        task_name = self.builder.get_object("gtkComboBoxTextNewTimeEntryTask").get_active_text()
+        notes_buffer = self.builder.get_object("gtkComboBoxTextNewTimeEntryNotes").get_buffer()
+        hours = self.builder.get_object('entryTimeEntryHours').get_text()
+        notes = notes_buffer.get_text(
+            notes_buffer.get_start_iter(),
+            notes_buffer.get_end_iter(),
+            True
+            )
+        spent_date = self.selected_date.isoformat()
+        project = self.project_assignments[project_name]
+        project_id = project.id
+        task_id = project.get_task_by_name(task_name).id
+        data = {
+            'user_id': self.user['id'],
+            'notes': notes,
+            'spent_date': spent_date,
+            'task_id': task_id,
+            'project_id': project_id,
+            'hours': hours,
+        }
+        resp = TimeEntryEndpoint(
+            credential=self.oauth2.get_credential()).post(data=data)
+        if resp.status_code == 201:
+            tew = TimeEntryWrapper(
+                    time_entry=resp.json(),
+                    credential=self.oauth2.get_credential(),
+                    )
+            self.get_timeentry_list().add(tew.box)
+            self.hide_new_timeentry_dialog(button)
+
+    def show_new_timeentry_dialog(self, event_box, event_button):
+        self.main_spinner.start()
+        self.main_spinner.show()
+        self.run_thread(self.fetch_user_assignments, [],
+                        self.fetch_user_assignments_cb, [])
 
     def hide_new_timeentry_dialog(self, button):
         self.project_assignments = {}
@@ -206,38 +486,55 @@ class App(object):
     def get_timeentry_list(self):
         return self.builder.get_object("gtkListBoxTimeEntries")
 
-    # --(Time Entries Management)----------------------------------------------
-
-    def toggle_hours_count(self, button):
-        print('toggle_hours_count')
-        time_entry_id = button.get_name()
-        resp = TimeEntryUpdate(self.client, time_entry_id=time_entry_id).get()
-        if resp.status_code == 200:
-            if resp.json()['is_running']:
-                resp = TimeEntryStop(self.client, time_entry_id=time_entry_id).patch()
-            else:
-                resp = TimeEntryRestart(self.client, time_entry_id=time_entry_id).patch()
-            resp.json()['rounded_hours']
-
-    def edit_timeentry(self, button):
-        print('edit_timeentry')
-
-    def delete_timeentry(self, event_box, event_button):
-        print('delete_timeentry')
-        print(event_box.get_name())
-
-    # --(Week Calender Management)---------------------------------------------
+    # --(Events)--------------------------------------------
 
     def get_week_number(self):
         return self.selected_date.isocalendar()[1]
 
+    def get_timeentries(self, event_box, event_button):
+        self.selected_date = self.selected_week_dates[int(event_box.get_name())]
+        self.render_weekdays()
+        self.wipe_time_entries()
+        self.main_spinner.start()
+        self.main_spinner.show()
+        self.run_thread(self.fetch_timeentries_from_selected_date, [],
+                        self.fetch_initial_data_cb, [])
+
+    def get_today_time_entries(self, event_box, event_button):
+        self.selected_date = date.today()
+        self.render_weekdays()
+        self.wipe_time_entries()
+        self.main_spinner.start()
+        self.main_spinner.show()
+        self.run_thread(self.fetch_timeentries_from_selected_date, [],
+                        self.fetch_initial_data_cb, [])
+
     def get_last_week_timeentries(self, event_box, event_button):
-        self.selected_date = self.selected_date - timedelta(days=7)
-        self.sync_weekdays()
+        self.selected_date = self.selected_date - timedelta(
+            days=self.selected_date.weekday() + 1)
+        self.render_weekdays()
+        self.wipe_time_entries()
+        self.main_spinner.start()
+        self.main_spinner.show()
+        self.run_thread(self.fetch_timeentries_from_selected_date, [],
+                        self.fetch_initial_data_cb, [])
 
     def get_next_week_timeentries(self, event_box, event_button):
-        self.selected_date = self.selected_date + timedelta(days=7)
-        self.sync_weekdays()
+        self.selected_date = self.selected_date + timedelta(
+            days=7 - self.selected_date.weekday())
+        self.render_weekdays()
+        self.wipe_time_entries()
+        self.main_spinner.start()
+        self.main_spinner.show()
+        self.run_thread(self.fetch_timeentries_from_selected_date, [],
+                        self.fetch_initial_data_cb, [])
+
+    # ---( Utilities )---------------------------------------------------------
+
+    def wipe_time_entries(self):
+        children = self.get_timeentry_list().get_children()
+        for child in children:
+            self.get_timeentry_list().remove(child)
 
     def get_month_hours(self):
         svc = MonthTimeEntries()
@@ -249,83 +546,8 @@ class App(object):
             month_hours += Decimal(entry['hours'])
         self.builder.get_object("gtkLabelMonthHours").set_label(str(month_hours))
 
-    def get_monday_timeentries(self, event_box, event_button):
-        self.selected_date = self.dates[0]
-        self.sync_selected_date_timeentries()
-        # label = event_box.get_child()
-
-    def get_tuesday_timeentries(self, event_box, event_button):
-        self.selected_date = self.dates[1]
-        self.sync_selected_date_timeentries()
-
-    def get_wednesday_timeentries(self, event_box, event_button):
-        self.selected_date = self.dates[2]
-        self.sync_selected_date_timeentries()
-
-    def get_thursday_timeentries(self, event_box, event_button):
-        self.selected_date = self.dates[3]
-        self.sync_selected_date_timeentries()
-
-    def get_friday_timeentries(self, event_box, event_button):
-        self.selected_date = self.dates[4]
-        self.sync_selected_date_timeentries()
-
-    def get_saturday_timeentries(self, event_box, event_button):
-        self.selected_date = self.dates[5]
-        self.sync_selected_date_timeentries()
-
-    def get_sunday_timeentries(self, event_box, event_button):
-        self.selected_date = self.dates[6]
-        self.sync_selected_date_timeentries()
-
-    def sync_selected_date_timeentries(self):
-        svc = SingleDayTimeEntries()
-        svc.set_date(self.selected_date.isoformat())
-        resp = svc.all()
-        children = self.get_timeentry_list().get_children()#.remove_all()
-        for child in children:
-            self.get_timeentry_list().remove(child)
-        day_hours = Decimal(0)
-        for entry in resp['time_entries']:
-            day_hours += Decimal(entry['hours'])
-            self.insert_timeentry_widget(entry)
-        self.builder.get_object("gtkLabelTodayHours").set_label(str(day_hours))
-
-    def insert_timeentry_widget(self, timeentry_entity):
-        builder = Gtk.Builder()
-        builder.add_from_file("main.glade")
-        builder.connect_signals(self)
-        timeentry_wrapper = builder.get_object("gtkBoxTimeEntryWrapper")
-        # notes = builder.get_object("gtkTextViewTimeEntryDescription")
-        builder.get_object("gtkTextViewTimeEntryNotes").set_markup('<i>{}</i>'.format(timeentry_entity['notes']))
-        # notes.set_monospace(True)
-        # notes_buffer = notes.get_buffer()
-        # notes_buffer.set_text('{}...'.format(timeentry_entity['notes'][:100]))
-        hours = builder.get_object("gtkLabelTimer")
-        hours.set_label(str(timeentry_entity['hours']))
-        builder.get_object("gtkLabelTimeEntryTaskAndProjectName").set_markup(
-            f"<b>{timeentry_entity['project']['name']} - {timeentry_entity['task']['name']}</b>")
-        remove_timeentry = builder.get_object("gtkEventBoxRemoveTimeEntry")
-        remove_timeentry.set_name(str(timeentry_entity['id']))
-
-        toggle_timeentry = builder.get_object("gtkEventBoxToggleHoursCountTimeEntry")
-        toggle_timeentry.set_name(str(timeentry_entity['id']))
-        # builder.get_object("gtkLabelTimeEntryTaskAndProjectName").set_markup(
-        #     f"<b>{timeentry_entity['project']['name']}</b>")
-        # button_toggletimer = builder.get_object("gtkButtonToggleTimer")
-        # delete_timeentry = builder.get_object("gtkEventBoxDeleteTimeEntry")
-
-        # timeentry = TimeEntry()
-        # timeentry.label = label_timer
-
-        # desc.connect("focus", timeentry.edit_text)
-        # button_toggletimer.connect("clicked", timeentry.toggle_timer)
-        # remove_entry_fn = lambda btn, x: self.get_timeentry_list().remove(timeentry_wrapper.get_parent())
-
-        # delete_timeentry.connect("button-release-event", remove_entry_fn)
-
-        # timeentrywrapper = builder.get_object("gtkBoxTimeEntryWrapper")
-        self.get_timeentry_list().add(timeentry_wrapper)
+    def quit(self, *args):
+        Gtk.main_quit()
 
 
 if __name__ == '__main__':

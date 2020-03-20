@@ -1,75 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.22.1 -->
+<!-- Generated with glade 3.22.2 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
   <object class="GtkBox" id="gtkBoxTimeEntryWrapper">
     <property name="height_request">30</property>
     <property name="visible">True</property>
-    <property name="can_focus">True</property>
-    <property name="margin_left">5</property>
-    <property name="margin_right">5</property>
-    <property name="margin_top">5</property>
-    <property name="margin_bottom">5</property>
-    <property name="homogeneous">True</property>
+    <property name="can_focus">False</property>
+    <property name="margin_top">10</property>
+    <property name="margin_bottom">10</property>
     <child>
-      <object class="GtkTextView" id="gtkTextViewTimeEntryDescription">
-        <property name="visible">True</property>
-        <property name="can_focus">True</property>
-        <property name="editable">False</property>
-        <property name="wrap_mode">char</property>
-        <property name="left_margin">2</property>
-        <property name="right_margin">2</property>
-        <property name="top_margin">2</property>
-        <property name="bottom_margin">2</property>
-        <property name="cursor_visible">False</property>
-        <property name="input_purpose">alpha</property>
-        <property name="monospace">True</property>
-        <signal name="focus-in-event" handler="edit_text" swapped="no"/>
-      </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="fill">True</property>
-        <property name="position">0</property>
-      </packing>
-    </child>
-    <child>
-      <object class="GtkLabel" id="gtkLabelTimer">
+      <object class="GtkBox">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="label" translatable="yes">label</property>
+        <property name="valign">start</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkLabel" id="gtkLabelTimeEntryTaskAndProjectName">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">start</property>
+            <property name="label" translatable="yes">Company Name [Project Name] - Task Name</property>
+            <property name="ellipsize">end</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="gtkTextViewTimeEntryNotes">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">start</property>
+            <property name="label" translatable="yes">Review some bloopers from the last recorded episode</property>
+            <property name="justify">fill</property>
+            <property name="wrap">True</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
       </object>
       <packing>
-        <property name="expand">False</property>
+        <property name="expand">True</property>
         <property name="fill">True</property>
-        <property name="position">1</property>
-      </packing>
-    </child>
-    <child>
-      <object class="GtkButton" id="gtkButtonToggleTimer">
-        <property name="label" translatable="yes">Start</property>
-        <property name="visible">True</property>
-        <property name="can_focus">True</property>
-        <property name="receives_default">True</property>
-        <signal name="clicked" handler="toggle_timer" swapped="no"/>
-      </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="fill">True</property>
-        <property name="position">2</property>
+        <property name="position">0</property>
       </packing>
     </child>
     <child>
       <object class="GtkBox">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="homogeneous">True</property>
+        <property name="spacing">5</property>
         <child>
-          <object class="GtkEventBox" id="gtkEventBoxToggleHoursCountTimeEntry">
+          <object class="GtkLabel" id="gtkLabelTimeEntryHours">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <signal name="button-press-event" handler="toggle_hours_count" swapped="no"/>
+            <property name="label" translatable="yes">label</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkSpinner" id="spinnerTimeEntryUpdate">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkEventBox" id="gtkEventBoxTimeEntryToggleHoursCounter">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <signal name="button-press-event" handler="toggle_chronometer" swapped="no"/>
             <child>
-              <object class="GtkImage">
+              <object class="GtkImage" id="imageTimeEntryToggleHours">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="stock">gtk-media-play</property>
@@ -79,15 +94,16 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">0</property>
+            <property name="position">2</property>
           </packing>
         </child>
         <child>
-          <object class="GtkEventBox">
+          <object class="GtkEventBox" id="gtkEventBoxTimeEntryEdit">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <signal name="button-press-event" handler="edit_entry" swapped="no"/>
             <child>
-              <object class="GtkImage" id="gtkImageEditTimeEntry">
+              <object class="GtkImage">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="stock">gtk-edit</property>
@@ -97,31 +113,33 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">1</property>
+            <property name="position">3</property>
           </packing>
         </child>
         <child>
-          <object class="GtkEventBox" id="gtkEventBoxDeleteTimeEntry">
+          <object class="GtkEventBox" id="gtkEventBoxTimeEntryRemove">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <signal name="button-press-event" handler="delete_entry" swapped="no"/>
             <child>
               <object class="GtkImage">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="stock">gtk-close</property>
+                <property name="stock">gtk-no</property>
               </object>
             </child>
           </object>
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">2</property>
+            <property name="position">4</property>
           </packing>
         </child>
       </object>
       <packing>
         <property name="expand">False</property>
         <property name="fill">True</property>
+        <property name="padding">5</property>
         <property name="position">3</property>
       </packing>
     </child>
