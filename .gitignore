@@ -109,3 +109,6 @@ venv.bak/
 # Glade
 *~
 .themes/
+.bash_history
+.local/
+.python_history
