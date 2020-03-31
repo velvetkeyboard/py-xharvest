@@ -116,25 +116,6 @@
             <property name="position">3</property>
           </packing>
         </child>
-        <child>
-          <object class="GtkEventBox" id="gtkEventBoxTimeEntryRemove">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <signal name="button-press-event" handler="delete_entry" swapped="no"/>
-            <child>
-              <object class="GtkImage">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="stock">gtk-no</property>
-              </object>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">4</property>
-          </packing>
-        </child>
       </object>
       <packing>
         <property name="expand">False</property>
