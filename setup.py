@@ -9,7 +9,7 @@ setup(
     install_requires=[
         'pycairo==1.19.1',
         'PyGObject==3.34.0',
-        'harvest-api==0.1.2',
+        'harvest-api==0.2.0',
     ],
     include_package_data=True,
 )
