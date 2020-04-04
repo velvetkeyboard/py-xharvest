@@ -112,3 +112,7 @@ venv.bak/
 .bash_history
 .local/
 .python_history
+
+# Harvest
+harvest.cfg
+.harvest.cfg
