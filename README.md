@@ -2,7 +2,25 @@
 
 ## Description
 
-Unofficial Linux GTK based Desktop App.
+Unofficial Linux GTK based Harvest desktop app.
+
+## Install
+
+### Dependencies:
+
+- gcc
+- python3
+- python3-devel
+- cairo-devel
+- gtk3
+
+### PIP
+
+`pip install --user xharvest`
+
+### Source
+
+`pip install --user .`
 
 ## License
 
