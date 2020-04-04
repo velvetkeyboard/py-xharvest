@@ -1,13 +1,15 @@
 from setuptools import setup, find_packages
 from xharvest import __version__
 
+with open('README.md', 'r') as f:
+    long_description = f.read()
 
 setup(
     name='xharvest',
     version=__version__,
     url='https://github.abc.com/vyscond/python-xharvest',
     description='Unofficial GTK based Harvest desktop app for Linux',
-    long_description=open('README.md').read(),
+    long_description=long_description,
     install_requires=[
         'pycairo==1.19.1',
         'PyGObject==3.34.0',
