@@ -1,3 +1,4 @@
+import os.path
 from setuptools import setup, find_packages
 from xharvest import __version__
 
@@ -19,6 +20,12 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     package_data={'': ['glade/*.glade']},
+    data_files = [
+        (os.path.expanduser('~/.local/share/applications'), ['data/org.velvetkeyboad.xHarvest.desktop']),
+        (os.path.expanduser('~/.local/share/icons/hicolor/48x48/apps/'), ['data/xharvest.png']),
+        (os.path.expanduser('~/.local/share/icons/hicolor/32x32/apps/'), ['data/xharvest.png']),
+        (os.path.expanduser('~/.local/share/icons/hicolor/16x16/apps/'), ['data/xharvest.png']),
+    ],
     entry_points={
         "console_scripts": [
             "xharvest=xharvest.ui:main"

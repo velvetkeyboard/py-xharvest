@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=xHarvest
+Comment=Unofficial Harvest Desktop
+Exec=xharvest
+Terminal=false
+Categories=Office
+Icon=xharvest
