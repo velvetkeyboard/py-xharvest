@@ -116,3 +116,7 @@ venv.bak/
 # Harvest
 harvest.cfg
 .harvest.cfg
+extra/
+flatpak/build-dir/
+flatpak/pypi/
+flatpak/.flatpak-builder/
