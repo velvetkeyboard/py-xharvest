@@ -24,7 +24,7 @@ def gtk_thread_class_cb(func):
     return wrapper
 
 
-class CustomThread(Thread):
+class GtkThread(Thread):
 
     def __init__(self, *args, **kwargs):
         self.target_cb = None
@@ -35,11 +35,12 @@ class CustomThread(Thread):
         if 'target_cb_args' in kwargs.keys():
             self.target_cb_args = kwargs.pop('target_cb_args', [])
 
-        super(CustomThread, self).__init__(*args, **kwargs)
+        super(GtkThread, self).__init__(*args, **kwargs)
 
     def start(self):
         self.daemon = True
-        super(CustomThread, self).start()
+        super(GtkThread, self).start()
         if self.target_cb:
-            args = [self] + self.target_cb_args
-            GLib.idle_add(self.target_cb, *(args))
+            args = [self] + list(self.target_cb_args)
+            GLib.idle_add(self.target_cb, *args)
+
