@@ -28,6 +28,11 @@ setup(
     ],
     packages=find_packages(),
     include_package_data=True,
+    extras_require={
+        'flatpak': [
+            'keyrings.cryptfile==1.3.4'
+        ]
+    },
     package_data={'': ['data/glade/*.glade']},
     data_files=data_files,
     entry_points={
