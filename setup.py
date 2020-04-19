@@ -2,14 +2,23 @@ import os.path
 from setuptools import setup, find_packages
 from xharvest import __version__
 
+data_path = f"{os.path.expanduser('~')}/.local/share"
+
 with open('README.md', 'r') as f:
     long_description = f.read()
+
+data_files = [
+    (f'{data_path}/applications', ['data/org.velvetkeyboad.xHarvest.desktop']),
+    (f'{data_path}/icons/hicolor/48x48/apps/', ['data/hicolor/48x48/xharvest.png']),
+    (f'{data_path}/icons/hicolor/32x32/apps/', ['data/hicolor/32x32/xharvest.png']),
+    (f'{data_path}/icons/hicolor/16x16/apps/', ['data/hicolor/16x16/xharvest.png']),
+]
 
 setup(
     name='xharvest',
     version=__version__,
-    url='https://github.abc.com/vyscond/python-xharvest',
-    description='Unofficial GTK based Harvest desktop app for Linux',
+    url='https://github.com/vyscond/py-xharvest',
+    description='Unofficial Harvest desktop for Linux',
     long_description=long_description,
     install_requires=[
         'pycairo==1.19.1',
@@ -19,13 +28,8 @@ setup(
     ],
     packages=find_packages(),
     include_package_data=True,
-    package_data={'': ['glade/*.glade']},
-    data_files = [
-        (os.path.expanduser('~/.local/share/applications'), ['data/org.velvetkeyboad.xHarvest.desktop']),
-        (os.path.expanduser('~/.local/share/icons/hicolor/48x48/apps/'), ['data/xharvest.png']),
-        (os.path.expanduser('~/.local/share/icons/hicolor/32x32/apps/'), ['data/xharvest.png']),
-        (os.path.expanduser('~/.local/share/icons/hicolor/16x16/apps/'), ['data/xharvest.png']),
-    ],
+    package_data={'': ['data/glade/*.glade']},
+    data_files=data_files,
     entry_points={
         "console_scripts": [
             "xharvest=xharvest.ui:main"
