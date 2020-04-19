@@ -1,0 +1,87 @@
+id: org.velvetkeyboad.xHarvest
+sdk: org.gnome.Sdk
+runtime: org.gnome.Platform
+runtime-version: "3.36"
+command: xharvest
+# rename-icon: xHarvest
+# copy-icon: true
+build-options:
+  share: network
+finish-args:
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  # - --socket=pulseaudio
+  - --device=all
+  - --share=network
+  - --allow=multiarch
+  - --allow=devel
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.gnome.Mutter.DisplayConfig
+  - --filesystem=xdg-desktop
+  - --env=PATH=/app/bin:/app/runners/bin:/usr/bin
+
+cleanup:
+  - echo "[[cleanup]]"
+  - pwd
+  - ls
+
+cleanup-commands:
+  - echo "[[cleanup-commands]]"
+  - pwd
+  - ls
+
+modules:
+  - name: pypi
+    sources:
+      - type: dir
+        path: pypi/
+    buildsystem: simple
+    build-commands:
+      # - pip3 install --prefix=/app --no-deps --upgrade pycairo-1.19.1-cp37-cp37m-linux_x86_64.whl
+      # - pip3 install --prefix=/app --no-deps --upgrade PyGObject-3.34.0-cp37-cp37m-linux_x86_64.whl
+      # - pip3 install --prefix=/app --no-deps --upgrade six-1.14.0-py2.py3-none-any.whl
+      - pip3 install --prefix=/app --no-deps --upgrade argon2_cffi-19.2.0-cp34-abi3-manylinux1_x86_64.whl
+      - pip3 install --prefix=/app --no-deps --upgrade certifi-2020.4.5.1-py2.py3-none-any.whl
+      - pip3 install --prefix=/app --no-deps --upgrade cffi-1.14.0-cp37-cp37m-manylinux1_x86_64.whl
+      - pip3 install --prefix=/app --no-deps --upgrade chardet-3.0.4-py2.py3-none-any.whl
+      - pip3 install --prefix=/app --no-deps --upgrade cryptography-2.9-cp35-abi3-manylinux2010_x86_64.whl
+      - pip3 install --prefix=/app --no-deps --upgrade harvest_api-0.2.0-py3-none-any.whl
+      - pip3 install --prefix=/app --no-deps --upgrade idna-2.9-py2.py3-none-any.whl
+      - pip3 install --prefix=/app --no-deps --upgrade importlib_metadata-1.6.0-py2.py3-none-any.whl
+      - pip3 install --prefix=/app --no-deps --upgrade jeepney-0.4.3-py3-none-any.whl
+      - pip3 install --prefix=/app --no-deps --upgrade keyrings.cryptfile-1.3.4-py2.py3-none-any.whl
+      - pip3 install --prefix=/app --no-deps --upgrade keyring-21.2.0-py3-none-any.whl
+      - pip3 install --prefix=/app --no-deps --upgrade pycparser-2.20-py2.py3-none-any.whl
+      - pip3 install --prefix=/app --no-deps --upgrade requests-2.23.0-py2.py3-none-any.whl
+      - pip3 install --prefix=/app --no-deps --upgrade SecretStorage-3.1.2-py3-none-any.whl
+      - pip3 install --prefix=/app --no-deps --upgrade urllib3-1.25.9-py2.py3-none-any.whl
+      - pip3 install --prefix=/app --no-deps --upgrade xharvest-0.2.0-py3-none-any.whl
+      - pip3 install --prefix=/app --no-deps --upgrade zipp-3.1.0-py3-none-any.whl
+      - which xharvest
+
+  #- name: xHarvest
+  #  buildsystem: simple
+  #  build-commands:
+  #    - pip3 install --prefix=/app .
+  #  sources:
+  #    - type: dir
+  #      path: .
+    # post-install:
+      # - desktop-file-edit --set-key=X-Flatpak-RenamedFrom --set-value="xharvest.desktop;" /app/share/applications/${FLATPAK_ID}.desktop
+
+    # modules:
+      # - name: gnome-desktop
+      #   buildsystem: meson
+      #   sources:
+      #     - type: archive
+      #       url: "https://download.gnome.org/sources/gnome-desktop/3.36/gnome-desktop-3.36.0.tar.xz"
+      #       sha256: 4b04c359ccddeffb15f2e148a7871c474f6cfed1e0da21de060a93f6b9ae5c15
+
+  # Multilib runtime for wine
+
+  # - name: vkd3d
+  #   sources: &vkd3d_sources
+  #     - type: archive
+  #       url: "https://dl.winehq.org/vkd3d/source/vkd3d-1.1.tar.xz"
+  #       sha256: 495adc61cc80c65d54b2f5b52092ea05d3797cc2c17a610f0fc98457d2f56ab6
