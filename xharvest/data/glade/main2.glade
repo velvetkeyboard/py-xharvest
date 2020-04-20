@@ -202,7 +202,18 @@ Author: Ramon Moraes <ramon@vyscond.io>
                   <placeholder/>
                 </child>
                 <child>
-                  <placeholder/>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">sign out</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <signal name="clicked" handler="on_signout" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">7</property>
+                  </packing>
                 </child>
               </object>
               <packing>

@@ -24,20 +24,20 @@ class MainHandler(Handler):
         self.spinner = self.builder.get_object('spinnerTimeEntries')
 
     def initial_setup(self):
-        self.start_spinner()
-        self.oauth2_mng = OAuth2CredentialManager()
+        # self.oauth2_mng = OAuth2CredentialManager()
         self.week.set_selected_date(datetime.now())
         self.render_week_days()
-        self.oauth2_mng.connect(
-                'user_authenticated', self.initial_setup)
-        self.week.connect(
-                'selected_date_changed', self.on_selected_date_changed)
-        self.time_entries.connect(
-                'time_entry_saved', self.on_time_entry_saved)
-        self.time_entries.connect(
-                'time_entry_deleted', self.on_time_entry_deleted)
 
         if not self.oauth2_mng.is_access_token_expired():
+            self.week.connect(
+                    'selected_date_changed', self.on_selected_date_changed)
+            self.time_entries.connect(
+                    'time_entry_saved', self.on_time_entry_saved)
+            self.time_entries.connect(
+                    'time_entry_deleted', self.on_time_entry_deleted)
+            self.custom_signals.connect(
+                    'user_signout', self.on_user_signout)
+            self.start_spinner()
             self.user.oauth2 = self.oauth2_mng.get_credential()
             self.assignments.oauth2 = self.oauth2_mng.get_credential()
             self.time_entries.oauth2 = self.oauth2_mng.get_credential()
@@ -64,6 +64,8 @@ class MainHandler(Handler):
         window_state = event_window_state.new_window_state
         if window_state == Gdk.WindowState.FOCUSED and \
             self.mask_booting == changed_mask:
+            self.custom_signals.connect(
+                    'user_authenticated', self.initial_setup)
             self.initial_setup()
 
     def render_week_days(self):
@@ -133,6 +135,14 @@ class MainHandler(Handler):
         data = {'user': self.user.data}
         win = SettingsFactory(handler, data).build()
         win.show_all()
+
+    def on_user_signout(self, gobj):
+        self.oauth2_mng.wipe()
+        self.time_entries.data = []
+        lbox = self.builder.get_object('listBoxTimeEntries')
+        for c in lbox.get_children():
+            lbox.remove(c)
+        self.initial_setup()
 
     def quit(self, *args):
         Gtk.main_quit()

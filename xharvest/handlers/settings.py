@@ -2,4 +2,7 @@ from xharvest.handlers.base import Handler
 
 
 class SettingsHandler(Handler):
-    pass
+
+    def on_signout(self, btn):
+        self.custom_signals.emit('user_signout')
+        self.win.destroy()

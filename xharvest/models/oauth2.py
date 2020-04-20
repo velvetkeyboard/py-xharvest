@@ -74,3 +74,10 @@ class OAuth2CredentialManager(GObject.GObject):
                     return False
 
         return True
+
+    def wipe(self):
+        keyring.delete_password('xharvest', 'access_token')
+        keyring.delete_password('xharvest', 'client_secret')
+        keyring.delete_password('xharvest', 'last_request_date')
+        keyring.delete_password("xharvest", "expires_in")
+

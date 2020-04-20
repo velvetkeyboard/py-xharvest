@@ -16,7 +16,7 @@ class AuthHandler(Handler):
             self.oauth2_mng.set_expiration(params['expires_in'])
             self.oauth2_mng.set_last_request_date(datetime.now().isoformat())
             self.oauth2_mng.set_scope(params['scope'])
-            self.oauth2_mng.emit('user_authenticated')
+            self.custom_signals.emit('user_authenticated')
             self.builder.get_object(
                     'windowHarvestOAuth2Authorization').destroy()
             return True

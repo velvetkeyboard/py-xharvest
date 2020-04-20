@@ -9,5 +9,6 @@ class CustomSignals(GObject.GObject):
         'time_entry_saved': (GObject.SIGNAL_RUN_FIRST, None, (str,)),
         'time_entry_restarted': (GObject.SIGNAL_RUN_FIRST, None, (int,)),
         'user_authenticated': (GObject.SIGNAL_RUN_FIRST, None, ()),
+        'user_signout': (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 

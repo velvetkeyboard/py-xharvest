@@ -11,6 +11,7 @@ class SettingsFactory(Factory):
     ]
 
     def bind(self):
+        self.handler.win = self.builder.get_object('appWindowSettings')
         self.builder.get_object('labelUserFirstName')\
                     .set_label(self.handler.user.data['first_name'])
         self.builder.get_object('labelUserLastName')\
