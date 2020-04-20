@@ -11,26 +11,15 @@ finish-args:
   - --share=ipc
   - --socket=x11
   - --socket=wayland
-  # - --socket=pulseaudio
+  - --socket=pulseaudio
   - --device=all
   - --share=network
   - --allow=multiarch
   - --allow=devel
   - --talk-name=org.freedesktop.Notifications
-  - --talk-name=org.gnome.Mutter.DisplayConfig
   - --filesystem=xdg-desktop
+  - --filesystem=~/.fonts
   - --env=PATH=/app/bin:/app/runners/bin:/usr/bin
-
-cleanup:
-  - echo "[[cleanup]]"
-  - pwd
-  - ls
-
-cleanup-commands:
-  - echo "[[cleanup-commands]]"
-  - pwd
-  - ls
-
 modules:
   - name: pypi
     sources:
@@ -58,30 +47,4 @@ modules:
       - pip3 install --prefix=/app --no-deps --upgrade urllib3-1.25.9-py2.py3-none-any.whl
       - pip3 install --prefix=/app --no-deps --upgrade xharvest-0.2.0-py3-none-any.whl
       - pip3 install --prefix=/app --no-deps --upgrade zipp-3.1.0-py3-none-any.whl
-      - which xharvest
 
-  #- name: xHarvest
-  #  buildsystem: simple
-  #  build-commands:
-  #    - pip3 install --prefix=/app .
-  #  sources:
-  #    - type: dir
-  #      path: .
-    # post-install:
-      # - desktop-file-edit --set-key=X-Flatpak-RenamedFrom --set-value="xharvest.desktop;" /app/share/applications/${FLATPAK_ID}.desktop
-
-    # modules:
-      # - name: gnome-desktop
-      #   buildsystem: meson
-      #   sources:
-      #     - type: archive
-      #       url: "https://download.gnome.org/sources/gnome-desktop/3.36/gnome-desktop-3.36.0.tar.xz"
-      #       sha256: 4b04c359ccddeffb15f2e148a7871c474f6cfed1e0da21de060a93f6b9ae5c15
-
-  # Multilib runtime for wine
-
-  # - name: vkd3d
-  #   sources: &vkd3d_sources
-  #     - type: archive
-  #       url: "https://dl.winehq.org/vkd3d/source/vkd3d-1.1.tar.xz"
-  #       sha256: 495adc61cc80c65d54b2f5b52092ea05d3797cc2c17a610f0fc98457d2f56ab6

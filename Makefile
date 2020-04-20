@@ -1,9 +1,9 @@
 .PHONY: build
 
 flatpak_dir=flatpak
-build_dir=build/flatpak
 mode=pypi
 docker_tag=local
+
 
 run:
 ifeq ($(mode),)
@@ -11,7 +11,11 @@ ifeq ($(mode),)
 endif
 ifeq ($(mode),flatpak)
 	cd $(flatpak_dir) && \
-		flatpak-builder --run build-dir org.velvetkeyboard.xHarvest.yml xharvest
+		flatpak-builder \
+			--run \
+			--verbose \
+			build-dir \
+			org.velvetkeyboard.xHarvest.yml xharvest
 endif
 
 
