@@ -6,7 +6,7 @@ docker_tag=local
 
 
 run:
-ifeq ($(mode),)
+ifeq ($(mode),pypi)
 	./env/bin/pip install . && ./env/bin/xharvest
 endif
 ifeq ($(mode),flatpak)
@@ -17,7 +17,12 @@ ifeq ($(mode),flatpak)
 			build-dir \
 			org.velvetkeyboard.xHarvest.yml xharvest
 endif
-
+ifeq ($(mode),docker)
+	docker run \
+		-e DISPLAY=$DISPLAY \
+		-v /tmp/.X11-unix:/tmp/.X11-unix \
+		velvetkeyboard/xharvest:$(docker_tag)
+endif
 
 build:
 ifeq ($(mode),pypi)
