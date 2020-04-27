@@ -9,7 +9,8 @@ from harvest.credentials import OAuth2Credential
 class OAuth2CredentialManager(GObject.GObject):
 
     __gsignals__ = {
-        'user_authenticated': (GObject.SIGNAL_RUN_FIRST, None, ())
+        'user_authenticated': (GObject.SIGNAL_RUN_FIRST, None, ()),
+        'user_signout': (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
     domain = 'https://id.getharvest.com'
@@ -77,7 +78,7 @@ class OAuth2CredentialManager(GObject.GObject):
 
     def wipe(self):
         keyring.delete_password('xharvest', 'access_token')
-        keyring.delete_password('xharvest', 'client_secret')
+        # keyring.delete_password('xharvest', 'client_secret')
         keyring.delete_password('xharvest', 'last_request_date')
         keyring.delete_password("xharvest", "expires_in")
 

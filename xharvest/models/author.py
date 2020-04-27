@@ -6,8 +6,8 @@ from gi.repository.GdkPixbuf import Pixbuf
 
 class Author(object):
 
-    def get_avatar_img_as_pixbuf(self):
-        email = 'ramon@vyscond.io'
+    def get_avatar_img_as_pixbuf(self, email=None):
+        email = email or 'ramon@vyscond.io'
         size = 40
         h = hashlib.md5(email.lower().encode('utf-8')).hexdigest()
         url = f'https://www.gravatar.com/avatar/{h}?d={size}'
