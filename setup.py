@@ -40,6 +40,7 @@ setup(
             'data/glade/*.glade',
             'data/css/*.css',
             'data/img/*.png',
+            'data/img/*.jpg',
         ]
     },
     data_files=data_files,
