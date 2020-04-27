@@ -44,9 +44,13 @@ class MainWindowHandler(Handler):
     # ----------------------------------------------------------------[Helpers]
 
     def fetch_base_data(self):
+        '''
+        Description:
+            Yes. We are blocking on purpose to avoid user trying interacting
+            with some part of the UI and see no reaction. We will slowly move
+            the parts to be more and more asynchronous.
+        '''
         self.user.fetch_data()
-        if self.user.data:
-            self.user.download_user_avatar()
         self.assignments.fetch_data()
         GtkThread(target=self.time_entries.fetch_data).start()
 

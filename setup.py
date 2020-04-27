@@ -2,14 +2,16 @@ import os.path
 from setuptools import setup, find_packages
 from xharvest import __version__
 
-data_path = f"{os.path.expanduser('~')}/.local/share"
-xharvest_cfg_path = f"{os.path.expanduser('~')}/.xharvest"
+HOME_DIR = os.path.expanduser('~')
+
+data_path = f"{HOME_DIR}/.local/share"
+xharvest_cfg_path = f"{HOME_DIR}/.xharvest"
 
 with open('README.md', 'r') as f:
     long_description = f.read()
 
 data_files = [
-    (f'{xharvest_cfg_path}', ['data/user_avatar.jpg']),
+    (f'{xharvest_cfg_path}', ['data/rubberduck.jpg']),
     (f'{data_path}/applications', ['data/org.velvetkeyboad.xHarvest.desktop']),
     (
         f'{data_path}/icons/hicolor/128x128/apps/',

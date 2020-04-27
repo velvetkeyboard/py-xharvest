@@ -1,4 +1,6 @@
 from gi.repository import Gtk
+from xharvest.threads import GtkThread
+from xharvest.threads import gtk_thread_cb
 from xharvest.handlers.base import Handler
 from xharvest.handlers.about import AboutHandler
 
@@ -11,6 +13,23 @@ class SettingsHandler(Handler):
         self.get_widget("label_user_avatar").set_from_pixbuf(
             self.user.get_avatar_img_as_pixbuf()
         )
+        self.get_widget("label_user_avatar").set_from_pixbuf(
+            self.user.get_avatar_img_as_pixbuf(),
+            )
+        target_cb = lambda t: self.user.emit("avatar_download_end")
+        GtkThread(
+            target=self.user.download_user_avatar,
+            target_cb=gtk_thread_cb(target_cb),
+            ).start()
+
+    def bind_signals(self):
+        self.user.connect(
+            "avatar_download_end", self.on_avatar_download_end)
+
+    def on_avatar_download_end(self, gobj):
+        self.get_widget("label_user_avatar").set_from_pixbuf(
+            self.user.get_avatar_img_as_pixbuf(),
+            )
 
     def on_go_to_my_account(self, *args):
         acc_id = self.user.data['id']

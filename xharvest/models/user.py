@@ -9,7 +9,15 @@ from xharvest.logger import logger
 
 class User(GObject.GObject):
 
+    USER_AVATAR_PATH = "~/.xharvest/user_avatar.jpg"
+    USER_AVATAR_PLACEHOLDER = "~/.xharvest/rubberduck.jpg"
+
     USER_AVATAR_SIZE = 48
+
+    __gsignals__ = {
+        "avatar_download_bgn": (GObject.SIGNAL_RUN_FIRST, None, ()),
+        "avatar_download_end": (GObject.SIGNAL_RUN_FIRST, None, ()),
+    }
 
     def __init__(self, oauth2=None, data=None):
         super(User, self).__init__()
@@ -20,16 +28,18 @@ class User(GObject.GObject):
         self.data = CurrentUser(self.oauth2).get()
 
     def get_avatar_img_file_path(self):
-        file_path = os.path.expanduser("~/.xharvest/user_avatar.jpg")
-        logger.debug(f"User.get_avatar_img_file_path returning {file_path}")
+        file_path = os.path.expanduser(self.USER_AVATAR_PATH)
+        if not os.path.isfile(file_path):
+            file_path = os.path.expanduser(self.USER_AVATAR_PLACEHOLDER)
         return file_path
 
     def download_user_avatar(self):
-        file_path = self.get_avatar_img_file_path()
-        url = self.data["avatar_url"]
-        resp = urllib.request.urlopen(url)
-        with open(file_path, "wb") as f:
-            f.write(resp.read())
+        file_path = os.path.expanduser(self.USER_AVATAR_PATH)
+        if not os.path.isfile(file_path):
+            url = self.data["avatar_url"]
+            resp = urllib.request.urlopen(url)
+            with open(file_path, "xb") as f:
+                f.write(resp.read())
 
     def get_avatar_img_as_pixbuf(self, mode="file"):
         if mode == "stream":
