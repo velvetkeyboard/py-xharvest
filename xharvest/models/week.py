@@ -7,14 +7,13 @@ from xharvest.models.weekday import WeekDay
 class Week(GObject.GObject):
 
     __gsignals__ = {
-        'selected_date_changed': (GObject.SIGNAL_RUN_FIRST, None, ()),
-        'set_selected_date_today': (GObject.SIGNAL_RUN_FIRST, None, ()),
+        "selected_date_changed": (GObject.SIGNAL_RUN_FIRST, None, ()),
+        "set_selected_date_today": (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
     def __init__(self):
         super(Week, self).__init__()
-        #GObject.GObject.__init__(self)
-        self.selected_date = datetime.now() # initial_date or datetime.now()
+        self.selected_date = datetime.now()
         self.days = []
 
     def get_selected_date(self):
@@ -34,17 +33,15 @@ class Week(GObject.GObject):
             self.days.append(day)
 
     def shift_prev_week(self):
-        print('Shifting from', self.selected_date)
-        self.selected_date = (self.selected_date - \
-            timedelta(days=self.selected_date.weekday() + 1))
-        print('Shifting to', self.selected_date)
+        self.selected_date = self.selected_date - timedelta(
+            days=self.selected_date.weekday() + 1
+        )
         self.gen_days()
 
     def shift_next_week(self):
-        print('Shifting from', self.selected_date)
-        self.selected_date = (self.selected_date + \
-            timedelta(days=7 - self.selected_date.weekday()))
-        print('Shifting to', self.selected_date)
+        self.selected_date = self.selected_date + timedelta(
+            days=7 - self.selected_date.weekday()
+        )
         self.gen_days()
 
     def __str__(self):

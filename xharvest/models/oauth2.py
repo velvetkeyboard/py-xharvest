@@ -9,27 +9,24 @@ from harvest.credentials import OAuth2Credential
 class OAuth2CredentialManager(GObject.GObject):
 
     __gsignals__ = {
-        'user_authenticated': (GObject.SIGNAL_RUN_FIRST, None, ()),
-        'user_signout': (GObject.SIGNAL_RUN_FIRST, None, ()),
+        "user_authenticated": (GObject.SIGNAL_RUN_FIRST, None, ()),
+        "user_signout": (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
-    domain = 'https://id.getharvest.com'
-    redirect_domain = 'http://localhost:8118'
+    domain = "https://id.getharvest.com"
+    redirect_domain = "http://localhost:8118"
 
     def get_credential(self):
         access_token = keyring.get_password("xharvest", "access_token")
         scope = keyring.get_password("xharvest", "scope")
-        return OAuth2Credential(
-                access_token,
-                scope,
-                )
+        return OAuth2Credential(access_token, scope,)
 
     def set_access_token(self, access_token):
         keyring.set_password("xharvest", "access_token", access_token)
 
     def set_scope(self, scope):
         scope = urllib.parse.unquote(scope)
-        scope = scope.split(':')[1].strip()
+        scope = scope.split(":")[1].strip()
         keyring.set_password("xharvest", "scope", scope)
 
     def set_refresh_token(self, refresh_token):
@@ -60,9 +57,9 @@ class OAuth2CredentialManager(GObject.GObject):
         return keyring.get_password("xharvest", "expires_in")
 
     def get_access_token_authorization_url(self):
-        return '{}/oauth2/authorize?client_id={}&response_type=token'.format(
-            self.domain,
-            self.get_client_id())
+        return "{}/oauth2/authorize?client_id={}&response_type=token".format(
+            self.domain, self.get_client_id()
+        )
 
     def is_access_token_expired(self):
         if keyring.get_password("xharvest", "access_token"):
@@ -77,8 +74,7 @@ class OAuth2CredentialManager(GObject.GObject):
         return True
 
     def wipe(self):
-        keyring.delete_password('xharvest', 'access_token')
+        keyring.delete_password("xharvest", "access_token")
         # keyring.delete_password('xharvest', 'client_secret')
-        keyring.delete_password('xharvest', 'last_request_date')
+        keyring.delete_password("xharvest", "last_request_date")
         keyring.delete_password("xharvest", "expires_in")
-

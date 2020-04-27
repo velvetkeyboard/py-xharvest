@@ -1,6 +1,4 @@
-from xharvest.utils import remove_all_children
 from xharvest.threads import GtkThread
-from xharvest.threads import gtk_thread_cb
 from xharvest.threads import gtk_thread_class_cb
 from xharvest.handlers.base import Handler
 from xharvest.models import TimeEntries
@@ -8,7 +6,7 @@ from xharvest.models import TimeEntries
 
 class TimeEntryFormHandler(Handler):
 
-    template = 'time_entry_form'
+    template = "time_entry_form"
 
     def __init__(self, time_entry_id=None):
         self.time_entry_id = time_entry_id
@@ -17,48 +15,50 @@ class TimeEntryFormHandler(Handler):
         if time_entry_id:
             self.time_entry = self.time_entries.get_by_id(time_entry_id)
         self.hours = 0
-        self.notes = ''
+        self.notes = ""
         self.proj_id = -1
         self.task_id = -1
         # Replace with a proper GObject [end]
         super(TimeEntryFormHandler, self).__init__()
 
     def bind_data(self):
-        self.cbx_proj = self.builder.get_object('comboBoxTextNewTimeEntryProject')
-        self.cbx_task = self.builder.get_object('comboBoxTextNewTimeEntryTask')
+        self.cbx_proj = self.builder.get_object(
+            "comboBoxTextNewTimeEntryProject")
+        self.cbx_task = self.builder.get_object("comboBoxTextNewTimeEntryTask")
         self.render_comboboxes()
-        txt_notes = self.builder.get_object('textViewNewTimeEntryNotes')
-        ent_hours = self.builder.get_object('entryNewTimeEntryHours')
+        txt_notes = self.builder.get_object("textViewNewTimeEntryNotes")
+        ent_hours = self.builder.get_object("entryNewTimeEntryHours")
         if self.time_entry:
-            self.cbx_proj.set_active_id(str(self.time_entry['project']['id']))
-            self.cbx_task.set_active_id(str(self.time_entry['task']['id']))
+            self.cbx_proj.set_active_id(str(self.time_entry["project"]["id"]))
+            self.cbx_task.set_active_id(str(self.time_entry["task"]["id"]))
             bf = txt_notes.get_buffer()
-            bf.set_text(self.time_entry['notes'])
-            ent_hours.set_text(str(self.time_entry['hours']))
-            self.builder.get_object('labelDeleteTimeEntry').show()
-            self.get_widget('buttonCreateOrUpateNewTimeEntry').hide()
+            bf.set_text(self.time_entry["notes"])
+            ent_hours.set_text(str(self.time_entry["hours"]))
+            self.builder.get_object("labelDeleteTimeEntry").show()
+            self.get_widget("buttonCreateOrUpateNewTimeEntry").hide()
         else:
-            self.builder.get_object('labelDeleteTimeEntry').hide()
-            self.get_widget('buttonCreateOrUpateNewTimeEntry').show()
+            self.builder.get_object("labelDeleteTimeEntry").hide()
+            self.get_widget("buttonCreateOrUpateNewTimeEntry").show()
             self.cbx_proj.set_active(-1)
             self.cbx_task.set_active(-1)
 
     def bind_signals(self):
         self.assignments.connect(
-            'data_update_end', lambda g: self.render_comboboxes())
+            "data_update_end", lambda g: self.render_comboboxes())
 
     # ----------------------------------------------------------------[Helpers]
 
     def render_comboboxes(self):
         for a in self.assignments.data:
-            self.cbx_proj.append(str(a['project']['id']), a['project']['name'])
+            self.cbx_proj.append(str(a["project"]["id"]), a["project"]["name"])
             if self.time_entry:
-                if self.time_entry['project']['id'] == int(a['project']['id']):
-                    for t in a['task_assignments']: 
-                        self.cbx_task.append(f"{t['task']['id']}", t['task']['name'])
+                if self.time_entry["project"]["id"] == int(a["project"]["id"]):
+                    for t in a["task_assignments"]:
+                        self.cbx_task.append(
+                            f"{t['task']['id']}", t["task"]["name"])
 
     def start_spinner(self):
-        spinner = self.builder.get_object('spinnerCreatingNewTimeEntry')
+        spinner = self.builder.get_object("spinnerCreatingNewTimeEntry")
         spinner.show()
         spinner.start()
 
@@ -79,7 +79,7 @@ class TimeEntryFormHandler(Handler):
         self.cbx_task.remove_all()
         self.proj_id = int(cbx.get_active_id())
         for t in self.assignments.get_tasks(self.proj_id):
-            self.cbx_task.append(f"{t['task']['id']}", t['task']['name'])
+            self.cbx_task.append(f"{t['task']['id']}", t["task"]["name"])
 
     def on_combobox_tasks_changed(self, cbx):
         self.task_id = int(cbx.get_active_id() or 0)
@@ -98,15 +98,15 @@ class TimeEntryFormHandler(Handler):
         btn.hide()
         # TODO Hide Delete Button As Well
         data = {
-            'user_id':self.user.data['id'],
-            'notes': self.notes,
-            'task_id': int(self.task_id),
-            'project_id': int(self.proj_id),
-            'hours': self.hours,
+            "user_id": self.user.data["id"],
+            "notes": self.notes,
+            "task_id": int(self.task_id),
+            "project_id": int(self.proj_id),
+            "hours": self.hours,
         }
         if not self.time_entry_id:
-            data['user_id'] = self.user.data['id']
-            data['spent_date'] = self.week.get_selected_date()\
+            data["user_id"] = self.user.data["id"]
+            data["spent_date"] = self.week.get_selected_date()\
                                           .date()\
                                           .isoformat()
         GtkThread(

@@ -1,6 +1,6 @@
 import re
 from xharvest.data import get_template_path
-from xharvest.models import CustomSignals as GlobalSignals
+# from xharvest.models import CustomSignals as GlobalSignals
 from xharvest.models import TimeEntries
 from xharvest.models import Week
 from xharvest.models import User
@@ -10,25 +10,22 @@ from gi.repository import Gtk
 
 
 class Handler(object):
-    template = ''
-    template_name = ''
+    template = ""
     widgets = []
-    root_widget = 'root'
-    global_signals = GlobalSignals()
+    root_widget = "root"
+    # global_signals = GlobalSignals()
     oauth2 = OAuth2CredentialManager()
     user = User()
     time_entries = TimeEntries()
     week = Week()
     assignments = Assignments()
-    re_pattern = re.compile(r'(?<!^)(?=[A-Z])')
+    re_pattern = re.compile(r"(?<!^)(?=[A-Z])")
 
     def __init__(self, builder=None):
         self.builder = builder or Gtk.Builder()
         if self.widgets:
             self.builder.add_objects_from_file(
-                self.get_template(),
-                self.widgets
-            )
+                self.get_template(), self.widgets)
         else:
             self.builder.add_from_file(self.get_template())
         self.builder.connect_signals(self)
@@ -65,9 +62,11 @@ class Handler(object):
         if self.template:
             return get_template_path(self.template)
         else:
-            name = self.re_pattern.sub('_', self.__class__.__name__)\
-                        .lower()\
-                        .replace('_handler', '')
+            name = (
+                self.re_pattern.sub("_", self.__class__.__name__)
+                .lower()
+                .replace("_handler", "")
+            )
         return get_template_path(self.template or name)
 
     def get_widget(self, w_id):

@@ -1,0 +1,5 @@
+[flake8]
+exclude = build/*,dist/*,extra/*,flatpak/*,__pycache__/*,env/*,.git/*
+max-line-length = 80
+per-file-ignores =
+    ./xharvest/ui.py:E402,F401

@@ -11,9 +11,18 @@ with open('README.md', 'r') as f:
 data_files = [
     (f'{xharvest_cfg_path}', ['data/user_avatar.jpg']),
     (f'{data_path}/applications', ['data/org.velvetkeyboad.xHarvest.desktop']),
-    (f'{data_path}/icons/hicolor/48x48/apps/', ['data/hicolor/48x48/xharvest.png']),
-    (f'{data_path}/icons/hicolor/32x32/apps/', ['data/hicolor/32x32/xharvest.png']),
-    (f'{data_path}/icons/hicolor/16x16/apps/', ['data/hicolor/16x16/xharvest.png']),
+    (
+        f'{data_path}/icons/hicolor/48x48/apps/',
+        ['data/hicolor/48x48/xharvest.png']
+    ),
+    (
+        f'{data_path}/icons/hicolor/32x32/apps/',
+        ['data/hicolor/32x32/xharvest.png']
+    ),
+    (
+        f'{data_path}/icons/hicolor/16x16/apps/',
+        ['data/hicolor/16x16/xharvest.png']
+    ),
 ]
 
 setup(

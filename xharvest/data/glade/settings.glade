@@ -95,11 +95,18 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel">
+              <object class="GtkEventBox">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="halign">start</property>
-                <property name="label" translatable="yes">Got to My Account</property>
+                <signal name="button-press-event" handler="on_go_to_my_account" swapped="no"/>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">Got to My Account</property>
+                  </object>
+                </child>
               </object>
               <packing>
                 <property name="expand">False</property>
