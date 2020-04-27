@@ -1,0 +1,15 @@
+/*headerbar,
+headerbar entry,
+headerbar spinbutton,
+headerbar button,
+headerbar separator */
+#box_bottom,
+#box_bottom_inner,
+#box_bottom_inner * {
+    background-color: rgb(204, 91, 0);
+}
+/*
+#headerbar_date_title,
+#headerbar_home {
+    color: white;
+}*/
