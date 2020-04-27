@@ -1,5 +1,5 @@
 from xharvest.threads import GtkThread
-from xharvest.threads import gtk_thread_class_cb
+from xharvest.threads import gtk_thread_method_cb
 from xharvest.handlers.base import Handler
 from xharvest.models import TimeEntries
 
@@ -117,7 +117,7 @@ class TimeEntryFormHandler(Handler):
 
     # -------------------------------------------------------[Thread Callbacks]
 
-    @gtk_thread_class_cb
+    @gtk_thread_method_cb
     def on_saving_time_entry_cb(self, thread=None):
         self.get_root_widget().popdown()
         self.time_entries.emit(TimeEntries.SIGNAL_DATA_SET_CHANGED)

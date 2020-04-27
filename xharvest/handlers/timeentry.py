@@ -3,7 +3,7 @@ from harvest.endpoints import TimeEntryStopEndpoint
 from harvest.endpoints import TimeEntryRestartEndpoint
 from xharvest.logger import logger
 from xharvest.threads import GtkThread
-from xharvest.threads import gtk_thread_class_cb
+from xharvest.threads import gtk_thread_method_cb
 from xharvest.models import Hour
 from xharvest.handlers.base import Handler
 from xharvest.handlers.timeentryform import TimeEntryFormHandler
@@ -122,7 +122,7 @@ class TimeEntryHandler(Handler):
             self.get_time_entry()["is_running"] = resp.json()["is_running"]
             self.get_time_entry()["hours"] = resp.json()["hours"]
 
-    @gtk_thread_class_cb
+    @gtk_thread_method_cb
     def start_chronometer_cb(self, thread=None):
         self.spinner.start()
         self.img_toggle.set_from_icon_name("gtk-media-pause", 1)
@@ -130,7 +130,7 @@ class TimeEntryHandler(Handler):
             self.CHRONOMETER_DELAY, self.chronometer
         )
 
-    @gtk_thread_class_cb
+    @gtk_thread_method_cb
     def stop_chronometer_cb(self, thread=None):
         self.spinner.stop()
         self.img_toggle.set_from_icon_name("gtk-media-play", 1)
