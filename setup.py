@@ -3,11 +3,13 @@ from setuptools import setup, find_packages
 from xharvest import __version__
 
 data_path = f"{os.path.expanduser('~')}/.local/share"
+xharvest_cfg_path = f"{os.path.expanduser('~')}/.xharvest"
 
 with open('README.md', 'r') as f:
     long_description = f.read()
 
 data_files = [
+    (f'{xharvest_cfg_path}', ['data/user_avatar.jpg']),
     (f'{data_path}/applications', ['data/org.velvetkeyboad.xHarvest.desktop']),
     (f'{data_path}/icons/hicolor/48x48/apps/', ['data/hicolor/48x48/xharvest.png']),
     (f'{data_path}/icons/hicolor/32x32/apps/', ['data/hicolor/32x32/xharvest.png']),
@@ -33,7 +35,13 @@ setup(
             'keyrings.cryptfile==1.3.4'
         ]
     },
-    package_data={'': ['data/glade/*.glade']},
+    package_data={
+        '': [
+            'data/glade/*.glade',
+            'data/css/*.css',
+            'data/img/*.png',
+        ]
+    },
     data_files=data_files,
     entry_points={
         "console_scripts": [
