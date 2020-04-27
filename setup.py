@@ -12,6 +12,10 @@ data_files = [
     (f'{xharvest_cfg_path}', ['data/user_avatar.jpg']),
     (f'{data_path}/applications', ['data/org.velvetkeyboad.xHarvest.desktop']),
     (
+        f'{data_path}/icons/hicolor/128x128/apps/',
+        ['data/hicolor/128x128/xharvest.png']
+    ),
+    (
         f'{data_path}/icons/hicolor/48x48/apps/',
         ['data/hicolor/48x48/xharvest.png']
     ),
