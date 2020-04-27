@@ -11,23 +11,22 @@ Unofficial Linux GTK based Harvest desktop app.
 - python3-devel
 - cairo-devel
 - gtk3
-- 
 
 ## Install
 
-### PIP
+### PIP (not yet working)
 
 `pip install --user xharvest`
 
 ### Source
 
-- `git clone https://github.com/vyscond/py-xharvest`
+- `git clone https://github.com/velvetkeyboard/py-xharvest`
+- `cd py-xharvest`
 - `pip install --user .`
 
-### Flatpak
+### Flatpak (not yet working)
 
 - `flatpak install org.velvetkeyboard.xHarvest`
-- `~/.var/app/org.velvetkeyboad.xHarvest/data/python_keyring/keyring_pass.cfg`
 
 ## License
 
