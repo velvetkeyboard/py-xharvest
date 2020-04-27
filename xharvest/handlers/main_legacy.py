@@ -59,11 +59,17 @@ class MainHandler(Handler):
         self.spinner.hide()
         self.spinner.stop()
 
+    def get_titlebar(self):
+        widget = MainTitleBarFactory().build()
+        return widget
+
     def on_window_state_event(self, window, event_window_state):
         changed_mask = event_window_state.changed_mask
         window_state = event_window_state.new_window_state
         if window_state == Gdk.WindowState.FOCUSED and \
             self.mask_booting == changed_mask:
+            win = self.get_widget('window')
+            win.set_titlebar(self.get_titlebar())
             self.custom_signals.connect(
                     'user_authenticated', self.initial_setup)
             self.initial_setup()
@@ -75,6 +81,7 @@ class MainHandler(Handler):
             widget = WeekDayFactory(WeekDayHandler(), day).build()
             widget.show_all()
             box.add(widget)
+        self.update_window_title()
 
     @gtk_thread_class_cb
     def render_time_entries(self, thread=None):
@@ -92,6 +99,10 @@ class MainHandler(Handler):
         lbox.show_all()
         self.stop_spinner()
 
+    def update_window_title(self):
+        label = self.builder.get_object('labelSelectedDateFullDesc')
+        label.set_markup(self.week.selected_date.strftime('%A, %d %B'))
+
     def on_time_entry_saved(self, *args, **kwargs):
         self.render_time_entries()
 
@@ -105,6 +116,7 @@ class MainHandler(Handler):
         self.week.set_selected_date(datetime.now())
         self.render_week_days()
         self.render_time_entries()
+        self.update_window_title()
 
     def get_last_week_timeentries(self, *args):
         self.week.shift_prev_week()
@@ -144,5 +156,5 @@ class MainHandler(Handler):
             lbox.remove(c)
         self.initial_setup()
 
-    def quit(self, *args):
+    def on_quit(self, *args):
         Gtk.main_quit()

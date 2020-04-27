@@ -4,30 +4,52 @@ from xharvest.handlers.base import Handler
 
 class WeekDayHandler(Handler):
 
-    LABEL_WEEKDAYNAME = 'labelWeekDayName'
-    LABEL_WEEKDAYDATE = 'labelWeekDayDate'
+    template = 'weekday'
+    root_widget = 'eb_weekday'
 
-    def set_label_bold(self, w):
-        w.set_markup(f'<b>{w.get_label()}</b>')
+    def __init__(self, weekday):
+        self.weekday = weekday
+        super(WeekDayHandler, self).__init__()
 
-    def set_label_regular(self, w):
-        tmp = w.get_label().replace('<b>', '').replace('</b>', '')
-        w.set_markup(f'{tmp}')
+    def bind_data(self):
+        self.lbl_name = self.builder.get_object('labelWeekDayName')
+        self.lbl_date = self.builder.get_object('labelWeekDayDate')
+        self.render()
 
-    def on_select_week_day(self, event_box, event_button):
-        lbl_name = self.find_child_by_name(event_box, self.LABEL_WEEKDAYNAME)
-        lbl_date = self.find_child_by_name(event_box, self.LABEL_WEEKDAYDATE)
-        self.set_label_bold(lbl_name)
-        self.set_label_bold(lbl_date)
-        box = event_box.get_parent()
-        for w in box.get_children():
-            if id(w) != id(event_box):
-                self.set_label_regular(
-                    self.find_child_by_name(w, self.LABEL_WEEKDAYNAME))
-                self.set_label_regular(
-                    self.find_child_by_name(w, self.LABEL_WEEKDAYDATE))
-        iso_date = event_box.get_name()
-        date_obj = datetime.strptime(iso_date, '%Y-%m-%d')
-        self.week.set_selected_date(date_obj)
-        self.week.emit('selected_date_changed', iso_date)
+    def bind_signals(self):
+        self.week.connect(
+            'selected_date_changed', self.on_selected_date_changed)
+        self.time_entries.connect(
+            'data_update_end', self.on_time_entries_data_was_updated)
 
+    def get_weekday_name(self):
+        return self.weekday.date_obj.strftime('%a')
+
+    def get_weekday_date(self):
+        # return self.weekday.date_obj.strftime('%m/%d')
+        ret = self.time_entries.get_total_hours_by_day(self.weekday.date_obj)
+        return f'{ret:02.02f}'            
+
+    def set_bold(self):
+        self.lbl_name.set_markup(f'<b>{self.get_weekday_name()}</b>')
+        self.lbl_date.set_markup(f'<b>{self.get_weekday_date()}</b>')
+
+    def set_regular(self):
+        self.lbl_name.set_markup(f'{self.get_weekday_name()}')
+        self.lbl_date.set_markup(f'{self.get_weekday_date()}')
+
+    def render(self):
+        if self.weekday.date_obj.date() != self.week.get_selected_date().date():
+            self.set_regular()
+        else:
+            self.set_bold()
+
+    def on_selected_date_changed(self, gobj):
+        self.render()
+
+    def on_time_entries_data_was_updated(self, gobj):
+        self.render()
+
+    def on_eb_weekday_button_press_event(self, ev_box, ev_btn):
+        self.week.set_selected_date(self.weekday.date_obj)
+        self.week.emit('selected_date_changed')

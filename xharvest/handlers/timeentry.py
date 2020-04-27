@@ -1,5 +1,6 @@
 from harvest.endpoints import TimeEntryStopEndpoint
 from harvest.endpoints import TimeEntryRestartEndpoint
+from xharvest.logger import logger
 from xharvest.threads import *
 from xharvest.models import Hour
 from xharvest.factories import *
@@ -11,16 +12,55 @@ class TimeEntryHandler(Handler):
 
     CHRONOMETER_DELAY = 37
 
-    def __init__(self, time_entry_id):
-        super(TimeEntryHandler, self).__init__()
+    template = 'time_entry'
+    root_widget = 'box_time_entry'
+
+    def __init__(self, time_entry):
         self.hour = None
-        self.time_entry_id = time_entry_id
+        self.data = time_entry
+        self.time_entry_id = time_entry['id']
         self.source_remove_id = None
-        self.custom_signals.connect(
+        super(TimeEntryHandler, self).__init__()
+
+    def bind_data(self):
+        proj_label = f'{self.data["project"]["name"]}'
+        if self.data['project']['code']:
+            proj_label = f'<b>[{self.data["project"]["code"]}] {proj_label}</b>'
+
+        self.builder.get_object('labelTimeEntryNotes')\
+                    .set_markup(f'<i>{self.data["notes"]}</i>')
+        self.builder.get_object('labelTimeEntryProject')\
+                    .set_markup(proj_label)
+        self.builder.get_object('labelTimeEntryTask')\
+                    .set_markup(f"<b>{self.data['task']['name']}</b>")
+        self.builder.get_object('labelTimeEntryHours')\
+                    .set_markup(f"<b>{self.data['hours']:02.02f}</b>")
+        # self.builder.get_object('eventBoxTimeEntryEdit')\
+        #             .set_name(str(self.data['id']))
+
+        self.spinner = self.builder.get_object('spinnerTimeEntry')
+        self.eb_toggle = self.builder.get_object(
+                'eventBoxTimeEntryToggleRunning')
+        self.img_toggle = self.builder.get_object(
+                'imageTimeEntryToggleRunning')
+        self.label_hours = self.builder.get_object(
+                'labelTimeEntryHours')
+
+        if self.data['is_running']:
+            self.start_chronometer_cb()
+
+    def bind_signals(self):
+        self.global_signals.connect(
                 'time_entry_restarted', self.on_time_entry_restarted)
+        self.time_entries.connect(
+            'time_entry_saved', self.on_time_entry_saved)
+
+    # ----------------------------------------------------------------[Helpers]
 
     def get_time_entry(self):
         return self.time_entries.get_by_id(self.time_entry_id)
+
+    # -----------------------------------------------------------[Model Events]
 
     def on_time_entry_restarted(self, gobj, to_be_restarted_time_entry_id):
         if self.time_entry_id != to_be_restarted_time_entry_id and \
@@ -29,18 +69,24 @@ class TimeEntryHandler(Handler):
                 target=self.stop_chronometer,
                 target_cb=self.stop_chronometer_cb).start()
 
-    def on_show_edit_time_entry_form(self, event_box, event_button):
-        time_entry = self.get_time_entry()
-        handler = TimeEntryFormHandler(self.time_entry_id)
-        data = {
-            'time_entry': time_entry,
-            'assignments': self.assignments.data,
-        }
-        popover = TimeEntryFormFactory(handler, data).build()
-        popover.set_relative_to(event_box)
-        popover.popup()
+    def on_time_entry_saved(self, gobj, time_entry_id):
+        logger.debug('TimeEntryHandler.on_time_entry_saved bgn')
+        logger.debug(f'TimeEntryHandler.on_time_entry_saved {int(time_entry_id)} == {int(self.time_entry_id)}')
+        if int(time_entry_id) == int(self.time_entry_id):
+            self.data = self.time_entries.get_by_id(time_entry_id)
+            self.bind_data()
 
-    def on_toggle_chronometer(self, event_box, event_button):
+    # ------------------------------------------------------------[Core Events]
+
+    def on_show_edit_form(self, ev_box, gdk_ev_btn):
+        if self.assignments.data:
+            time_entry = self.get_time_entry()
+            handler = TimeEntryFormHandler(self.time_entry_id)
+            popover = handler.get_root_widget()
+            popover.set_relative_to(ev_box)
+            popover.popup()
+
+    def on_toggle_chronometer(self, ev_box, gdk_ev_btn):
         time_entry = self.time_entries.get_by_id(self.time_entry_id)
         if time_entry['is_running']:
             print(f'time entry #{self.time_entry_id} will stop running now')
@@ -56,7 +102,7 @@ class TimeEntryHandler(Handler):
 
     def start_chronometer(self):
         endpoint = TimeEntryRestartEndpoint(
-                self.oauth2_mng.get_credential(),
+                self.oauth2.get_credential(),
                 time_entry_id=self.time_entry_id)
         resp = endpoint.patch()
         if resp.status_code == 200:
@@ -64,7 +110,7 @@ class TimeEntryHandler(Handler):
 
     def stop_chronometer(self):
         endpoint = TimeEntryStopEndpoint(
-                self.oauth2_mng.get_credential(),
+                self.oauth2.get_credential(),
                 time_entry_id=self.time_entry_id)
         resp = endpoint.patch()
         if resp.status_code == 200:
@@ -91,13 +137,13 @@ class TimeEntryHandler(Handler):
         if not self.hour:
             self.hour = Hour(self.get_time_entry()['hours'])
         if self.get_time_entry()['is_running']:
-            print(f"time entry #{self.time_entry_id} - tick")
+            logger.debug(f"time entry #{self.time_entry_id} - tick")
             self.hour.add_sec(self.CHRONOMETER_DELAY)
             self.update_hours_label(self.hour.as_harvest())
             self.source_remove_id = GLib.timeout_add_seconds(
                 self.CHRONOMETER_DELAY, self.chronometer)
         else:
-            print(f"time entry #{self.time_entry_id} - stop ticking")
+            logger.debug(f"time entry #{self.time_entry_id} - stop ticking")
             if self.source_remove_id:
                 GLib.source_remove(self.source_remove_id)
                 self.source_remove_id = None
