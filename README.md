@@ -4,15 +4,16 @@
 
 Unofficial Linux GTK based Harvest desktop app.
 
-## Install
-
-### Dependencies:
+## OS Dependencies
 
 - gcc
 - python3
 - python3-devel
 - cairo-devel
 - gtk3
+- 
+
+## Install
 
 ### PIP
 
@@ -20,7 +21,13 @@ Unofficial Linux GTK based Harvest desktop app.
 
 ### Source
 
-`pip install --user .`
+- `git clone https://github.com/vyscond/py-xharvest`
+- `pip install --user .`
+
+### Flatpak
+
+- `flatpak install org.velvetkeyboard.xHarvest`
+- `~/.var/app/org.velvetkeyboad.xHarvest/data/python_keyring/keyring_pass.cfg`
 
 ## License
 
