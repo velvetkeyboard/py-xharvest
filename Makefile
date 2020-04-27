@@ -52,8 +52,10 @@ update_assets:
 	-rm data/hicolor/16x16/xharvest.png
 	-rm data/hicolor/32x32/xharvest.png
 	-rm data/hicolor/48x48/xharvest.png
+	-rm data/hicolor/128x128/xharvest.png
 	-rm xharvest/data/img/xharvest.png
 	cp -f assets/logo-16.png data/hicolor/16x16/xharvest.png
 	cp -f assets/logo-32.png data/hicolor/32x32/xharvest.png
 	cp -f assets/logo-48.png data/hicolor/48x48/xharvest.png
+	cp -f assets/logo-128.png data/hicolor/128x128/xharvest.png
 	cp -f assets/logo-128.png xharvest/data/img/xharvest.png
