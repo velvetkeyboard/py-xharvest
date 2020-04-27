@@ -1,5 +1,6 @@
 from gi.repository import Gtk
 from gi.repository import Gdk
+from xharvest.data import get_img_path
 from xharvest.threads import GtkThread
 from xharvest.handlers.base import Handler
 from xharvest.handlers.timeentries import TimeEntriesHandler
@@ -11,7 +12,6 @@ from xharvest.handlers.login import LoginHandler
 
 
 class MainWindowHandler(Handler):
-    # template = "main_window"
 
     MASK_BOOTING = Gdk.WindowState.WITHDRAWN | Gdk.WindowState.FOCUSED
 
@@ -27,6 +27,7 @@ class MainWindowHandler(Handler):
         # Attaching fixed widgets
         self.vp_week.add(WeekHandler().get_root_widget())
         self.viewport.add(TimeEntriesHandler().get_root_widget())
+        self.get_root_widget().set_icon_from_file(get_img_path("xharvest.png"))
         if not self.oauth2.is_access_token_expired():
             self.fetch_base_data()
 
@@ -52,7 +53,6 @@ class MainWindowHandler(Handler):
     # -------------------------------------------------------[Standard Signals]
 
     def on_evbox_new_timeentry_button_press_event(self, ev_box, ev_btn):
-        print("MainWindowHandler", "on_evbox_new_timeentry_button_press_event")
         if self.assignments.data:
             w = TimeEntryFormHandler().get_root_widget()
             w.set_relative_to(ev_box)
