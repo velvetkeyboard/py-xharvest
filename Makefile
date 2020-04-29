@@ -3,7 +3,7 @@
 flatpak_dir=flatpak
 mode=pypi
 docker_tag=local
-
+builder_shell=docker run --rm -ti -w /app -v $$PWD/:/app:Z xharvest:builder bash -c 
 
 # export HARVEST_LOGLEVEL=DEBUG
 export XHARVEST_LOGLEVEL=DEBUG
@@ -28,8 +28,13 @@ ifeq ($(mode),docker)
 endif
 
 build:
+	docker build -t xharvest:builder -f Dockerfile.builder .
 ifeq ($(mode),pypi)
-	python setup.py sdist bdist_wheel
+	$(builder_shell) 'python setup.py sdist --formats=zip,gztar,xztar'
+	$(builder_shell) 'python setup.py bdist_wheel'
+endif
+ifeq ($(mode),rpm)
+	$(builder_shell) 'python setup.py bdist_rpm'
 endif
 ifeq ($(mode),flatpak)
 	mkdir -p flatpak/pypi/
@@ -39,9 +44,6 @@ ifeq ($(mode),flatpak)
 		flatpak-builder build-dir \
 			--force-clean \
 			org.velvetkeyboard.xHarvest.yml
-endif
-ifeq ($(mode),rpm)
-	mkdir -p build/$(mode)/
 endif
 ifeq ($(mode),docker)
 	docker build . -t velvetkeyboard/xharvest:$(docker_tag)

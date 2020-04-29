@@ -5,12 +5,12 @@ from gi.repository import Gio
 from gi.repository.GdkPixbuf import Pixbuf
 from harvest.services import CurrentUser
 from xharvest.logger import logger
-
+from xharvest.data import get_img_path
 
 class User(GObject.GObject):
 
     USER_AVATAR_PATH = "~/.xharvest/user_avatar.jpg"
-    USER_AVATAR_PLACEHOLDER = "~/.xharvest/rubberduck.jpg"
+    USER_AVATAR_PLACEHOLDER = get_img_path("rubberduck.jpg")
 
     USER_AVATAR_SIZE = 48
 

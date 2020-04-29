@@ -1,1 +1,5 @@
-include README.md LICENSE
+include README.md
+include LICENSE
+global-exclude *~
+recursive-include data/ *.[desktop|png|jpg]$
+recursive-include xharvest/data *.[glade|css|png|jpg]$

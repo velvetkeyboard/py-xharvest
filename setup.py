@@ -5,7 +5,7 @@ from xharvest import __app_name__
 from xharvest import __author__
 from xharvest import __author_email__
 from xharvest import __license__
-
+from xharvest import __long_description__
 
 # -----------------------------------------------------------------------[Meta]
 
@@ -14,34 +14,16 @@ with open('README.md', 'r') as f:
 
 # ---------------------------------------------------------------------[Assets]
 
-HOME_DIR = os.path.expanduser('~')
-DATA_PATH = f"{HOME_DIR}/.local/share"
-XHARVEST_CFG_PATH = f"{HOME_DIR}/.xharvest"
+DATA_PATH = 'share'
+DESKTOP_FILE_PATH = f'{DATA_PATH}/applications'
+HICONS_PATH = f'{DATA_PATH}/icons/hicolor'
 
 data_files = [
-    (
-        f'{XHARVEST_CFG_PATH}',
-        ['data/rubberduck.jpg'],
-    ),
-    (
-        f'{DATA_PATH}/applications',
-        ['data/org.velvetkeyboad.xHarvest.desktop']),
-    (
-        f'{DATA_PATH}/icons/hicolor/128x128/apps/',
-        ['data/hicolor/128x128/xharvest.png']
-    ),
-    (
-        f'{DATA_PATH}/icons/hicolor/48x48/apps/',
-        ['data/hicolor/48x48/xharvest.png']
-    ),
-    (
-        f'{DATA_PATH}/icons/hicolor/32x32/apps/',
-        ['data/hicolor/32x32/xharvest.png']
-    ),
-    (
-        f'{DATA_PATH}/icons/hicolor/16x16/apps/',
-        ['data/hicolor/16x16/xharvest.png']
-    ),
+    (DESKTOP_FILE_PATH, ['data/org.velvetkeyboad.xharvest.desktop']),
+    (f'{HICONS_PATH}/128x128/apps/', ['data/icons/128x128/xharvest.png']),
+    (f'{HICONS_PATH}/48x48/apps/', ['data/icons/48x48/xharvest.png']),
+    (f'{HICONS_PATH}/32x32/apps/', ['data/icons/32x32/xharvest.png']),
+    (f'{HICONS_PATH}/16x16/apps/', ['data/icons/16x16/xharvest.png']),
 ]
 
 setup(
@@ -52,7 +34,7 @@ setup(
     author_email=__author_email__,
     license=__license__,
     description='Unofficial Harvest desktop for Linux',
-    long_description=long_description,
+    long_description=__long_description__,
     install_requires=[
         'pycairo==1.19.1',
         'PyGObject==3.34.0',
