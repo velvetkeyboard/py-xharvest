@@ -39,7 +39,7 @@ setup(
         'pycairo==1.19.1',
         'PyGObject==3.34.0',
         'keyring==21.2.0',
-        'harvest-api==0.2.0',
+        'harvest-api==0.3.0',
     ],
     packages=find_packages(),
     include_package_data=True,

@@ -3,29 +3,9 @@ from datetime import datetime
 from gi.repository import GObject
 from xharvest.logger import logger
 from harvest.services import TimeRangeBaseService
+from harvest.services import WeekTimeEntriesService
 from harvest.endpoints import TimeEntryUpdateEndpoint
 from harvest.endpoints import TimeEntryEndpoint
-
-
-class WeekTimeEntriesService(TimeRangeBaseService):
-
-    def __init__(self, credential, date):
-        """
-        Params:
-            credential (harvest.credentials.OAuth2Credential):
-            date (datetime.datetime):
-        """
-        self.date = date
-        super(WeekTimeEntriesService, self).__init__(credential)
-
-    def get_date_range(self):
-        start = self.date + timedelta(0 - self.date.weekday())
-        end = self.date + timedelta(6 - self.date.weekday())
-        ret = (
-            start.date(),
-            end.date(),
-        )
-        return ret
 
 
 class TimeEntries(GObject.GObject):
