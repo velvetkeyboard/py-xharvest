@@ -1,7 +1,9 @@
+from datetime import datetime
 from gi.repository import Gtk
 from gi.repository import Gdk
 from xharvest.data import get_img_path
 from xharvest.threads import GtkThread
+from xharvest.models import Shortcuts
 from xharvest.handlers.base import Handler
 from xharvest.handlers.timeentries import TimeEntriesHandler
 from xharvest.handlers.week import WeekHandler
@@ -24,6 +26,7 @@ class MainWindowHandler(Handler):
         self.box = self.builder.get_object("box")
         self.vp_week = self.builder.get_object("viewport_week")
         self.viewport = self.builder.get_object("viewport_time_entries")
+        self.evbox_new_timeentry = self.get_widget("evbox_new_timeentry")
         # Attaching fixed widgets
         self.vp_week.add(WeekHandler().get_root_widget())
         self.viewport.add(TimeEntriesHandler().get_root_widget())
@@ -40,6 +43,26 @@ class MainWindowHandler(Handler):
         )
         self.oauth2.connect("user_authenticated", self.on_user_authenticated)
         self.oauth2.connect("user_signout", self.on_user_signout)
+
+        self.bind_accel_groups()
+
+    def bind_accel_groups(self):
+        self.ag_1 = self.preferences.get_accel_group(
+                Shortcuts.SHOW_TIME_ENTRY_FORM,
+                self.on_show_time_entry_form_kb,
+                )
+        self.ag_2 = self.preferences.get_accel_group(
+                Shortcuts.SHOW_TODAYS_ENTRIES,
+                self.on_back_to_today_kb,
+                )
+        # self.ag_3 = self.preferences.get_accel_group(
+        #         Shortcuts.SHOW_TIME_SUMMARY,
+        #         self.on_show_time_summary_kb,
+        #         )
+        # Re-attaching
+        self.get_root_widget().add_accel_group(self.ag_1)
+        self.get_root_widget().add_accel_group(self.ag_2)
+        # self.get_root_widget().add_accel_group(self.ag_3)
 
     # ----------------------------------------------------------------[Helpers]
 
@@ -73,6 +96,19 @@ class MainWindowHandler(Handler):
         Gtk.main_quit()
 
     # ----------------------------------------------------------[Model Signals]
+
+    def on_show_time_entry_form_kb(self, *args):
+        print('on_show_time_entry_form_kb')
+        self.on_evbox_new_timeentry_button_press_event(
+            self.evbox_new_timeentry,
+            None,
+            )
+
+    def on_back_to_today_kb(self, *args):
+        self.week.set_selected_date(datetime.now())
+        self.week.emit("selected_date_changed")
+        self.time_entries.date_obj = self.week.get_selected_date()
+        GtkThread(target=self.time_entries.fetch_data,).start()
 
     def on_user_authenticated(self, gobj):
         self.fetch_base_data()

@@ -3,6 +3,7 @@ from xharvest.threads import GtkThread
 from xharvest.threads import gtk_thread_cb
 from xharvest.handlers.base import Handler
 from xharvest.handlers.about import AboutHandler
+from xharvest.handlers.preferences import PreferencesHandler
 
 
 class SettingsHandler(Handler):
@@ -34,6 +35,9 @@ class SettingsHandler(Handler):
     def on_go_to_my_account(self, *args):
         acc_id = self.user.data['id']
         Gtk.show_uri(None, f"https://id.getharvest.com/accounts/{acc_id}", 1)
+
+    def on_show_preferences(self, *args):
+        PreferencesHandler().get_root_widget().show_all()
 
     def on_popover_settings_closed(self, *args):
         self.get_root_widget().destroy()
