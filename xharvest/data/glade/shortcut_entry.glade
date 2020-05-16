@@ -5,6 +5,7 @@
   <object class="GtkBox" id="root">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
+    <property name="spacing">10</property>
     <property name="homogeneous">True</property>
     <signal name="key-press-event" handler="on_root_key_press_event" swapped="no"/>
     <child>
@@ -17,27 +18,6 @@
         <property name="expand">False</property>
         <property name="fill">True</property>
         <property name="position">0</property>
-      </packing>
-    </child>
-    <child>
-      <object class="GtkViewport">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <child>
-          <object class="GtkLabel" id="label_shortcut_keybind">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="margin_top">2</property>
-            <property name="margin_bottom">2</property>
-            <property name="label" translatable="yes">label</property>
-          </object>
-        </child>
-      </object>
-      <packing>
-        <property name="expand">False</property>
-        <property name="fill">True</property>
-        <property name="padding">5</property>
-        <property name="position">1</property>
       </packing>
     </child>
     <child>

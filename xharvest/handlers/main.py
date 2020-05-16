@@ -11,6 +11,7 @@ from xharvest.handlers.main_headerbar import MainHeaderBarHandler
 from xharvest.handlers.settings import SettingsHandler
 from xharvest.handlers.timeentry import TimeEntryFormHandler
 from xharvest.handlers.login import LoginHandler
+from xharvest.tray import MainAppIndicator
 
 
 class MainWindowHandler(Handler):
@@ -33,8 +34,13 @@ class MainWindowHandler(Handler):
         self.get_root_widget().set_icon_from_file(get_img_path("xharvest.png"))
         if not self.oauth2.is_access_token_expired():
             self.fetch_base_data()
+        self.app_ind = MainAppIndicator([
+            ('item', 'Show', self.on_show),
+            ('item', 'Quit', lambda m: Gtk.main_quit()),
+            ])
 
     def bind_signals(self):
+        self.get_root_widget().connect("delete-event", self.on_quit)
         self.time_entries.connect(
             "time_entries_were_rendered", self.on_time_entries_were_rendered
         )
@@ -92,13 +98,23 @@ class MainWindowHandler(Handler):
             w.show_all()
             w.popup()
 
+    # FIXME show/hide is breaking the main window
+    def on_show(self, *args):
+        # self.get_root_widget().show()  #.set_visible(True)
+        self.get_root_widget().deiconify()
+        self.get_root_widget().present()
+
     def on_quit(self, *args):
-        Gtk.main_quit()
+        print(args)
+        if self.preferences.get_minimize_to_tray_icon():
+            self.get_root_widget().hide()  #.set_visible(False)
+            return True
+        else:
+            Gtk.main_quit()
 
     # ----------------------------------------------------------[Model Signals]
 
     def on_show_time_entry_form_kb(self, *args):
-        print('on_show_time_entry_form_kb')
         self.on_evbox_new_timeentry_button_press_event(
             self.evbox_new_timeentry,
             None,

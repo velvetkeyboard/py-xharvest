@@ -8,7 +8,6 @@
     <property name="default_width">260</property>
     <property name="default_height">550</property>
     <property name="gravity">west</property>
-    <signal name="destroy" handler="on_quit" swapped="no"/>
     <child type="titlebar">
       <placeholder/>
     </child>

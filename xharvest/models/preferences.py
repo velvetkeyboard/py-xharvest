@@ -54,6 +54,14 @@ class Preferences(GObject.GObject):
         cfg['shortcuts'][name]['key'] = key
         self.save_config(cfg)
 
+    def update_minimize_to_tray_icon(self, val):
+        cfg = self.get_config()
+        cfg['try_icon'] = val
+        self.save_config(cfg)
+
+    def get_minimize_to_tray_icon(self):
+        return self.get_config()['try_icon']
+
     def save_config(self, content):
         with open(CONFIG_PATH, 'w') as f:
             f.write(json.dumps(content, indent=2))
