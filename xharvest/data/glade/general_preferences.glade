@@ -9,6 +9,11 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
+  <object class="GtkEntryBuffer" id="entrybuffer_idle_min">
+    <property name="text" translatable="yes">10</property>
+    <signal name="deleted-text" handler="on_entrybuffer_idle_min_changed" swapped="no"/>
+    <signal name="inserted-text" handler="on_entrybuffer_idle_min_changed" swapped="no"/>
+  </object>
   <object class="GtkBox" id="root">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -55,12 +60,13 @@
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <child>
-          <object class="GtkCheckButton" id="checkbutton_detect_idle_time">
+          <object class="GtkCheckButton" id="cbtn_detect_idle_time">
             <property name="label" translatable="yes">Detect idle time after</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="receives_default">False</property>
             <property name="draw_indicator">True</property>
+            <signal name="toggled" handler="on_detect_idle_time_toggled" swapped="no"/>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -69,10 +75,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkSpinButton">
+          <object class="GtkSpinButton" id="spinbtn_idle_min_limit">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="halign">start</property>
+            <property name="buffer">entrybuffer_idle_min</property>
             <property name="adjustment">adjustment1</property>
           </object>
           <packing>

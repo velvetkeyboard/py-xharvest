@@ -31,6 +31,9 @@ class Preferences(GObject.GObject):
             # TODO let's try move it out to the setup flow
             os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
             self.save_config({
+                'detect_idle': False,
+                'idle_threshold': 60,
+                'try_icon': False,
                 "shortcuts": {
                     Shortcuts.SHOW_TIME_ENTRY_FORM: {
                         "mod_key": "Control",
@@ -58,6 +61,22 @@ class Preferences(GObject.GObject):
         cfg = self.get_config()
         cfg['try_icon'] = val
         self.save_config(cfg)
+
+    def update_detect_idle_time(self, val):
+        cfg = self.get_config()
+        cfg['detect_idle'] = val
+        self.save_config(cfg)
+
+    def get_detect_idle_time(self):
+        return self.get_config()['detect_idle']
+
+    def update_idle_sec(self, val):
+        cfg = self.get_config()
+        cfg['idle_threshold'] = val
+        self.save_config(cfg)
+
+    def get_idle_sec(self):
+        return self.get_config()['idle_threshold']
 
     def get_minimize_to_tray_icon(self):
         return self.get_config()['try_icon']
