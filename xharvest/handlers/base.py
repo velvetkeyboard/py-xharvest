@@ -6,6 +6,7 @@ from xharvest.models import Week
 from xharvest.models import User
 from xharvest.models import Assignments
 from xharvest.models import OAuth2CredentialManager
+from xharvest.models import Preferences
 from gi.repository import Gtk
 
 
@@ -19,6 +20,7 @@ class Handler(object):
     time_entries = TimeEntries()
     week = Week()
     assignments = Assignments()
+    preferences = Preferences()
     re_pattern = re.compile(r"(?<!^)(?=[A-Z])")
 
     def __init__(self, builder=None):

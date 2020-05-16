@@ -79,4 +79,4 @@ class TimeEntries(GObject.GObject):
                 if e["id"] == time_entry_id:
                     self.data.remove(e)
                     break
-            self.emit(self.SIGNAL_DATA_SET_CHANGED)
+            # self.emit(self.SIGNAL_DATA_SET_CHANGED)

@@ -49,6 +49,11 @@ ifeq ($(mode),docker)
 	docker build . -t velvetkeyboard/xharvest:$(docker_tag)
 endif
 
+todo:
+	grep -rnw xharvest -e "# TODO"
+
+fixme:
+	grep -rnw xharvest -e "# FIXME"
 
 update_assets:
 	-rm data/hicolor/16x16/xharvest.png

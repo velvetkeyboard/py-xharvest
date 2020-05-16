@@ -1,7 +1,9 @@
+from datetime import datetime
 from gi.repository import Gtk
 from gi.repository import Gdk
 from xharvest.data import get_img_path
 from xharvest.threads import GtkThread
+from xharvest.models import Shortcuts
 from xharvest.handlers.base import Handler
 from xharvest.handlers.timeentries import TimeEntriesHandler
 from xharvest.handlers.week import WeekHandler
@@ -9,6 +11,7 @@ from xharvest.handlers.main_headerbar import MainHeaderBarHandler
 from xharvest.handlers.settings import SettingsHandler
 from xharvest.handlers.timeentry import TimeEntryFormHandler
 from xharvest.handlers.login import LoginHandler
+from xharvest.tray import MainAppIndicator
 
 
 class MainWindowHandler(Handler):
@@ -24,14 +27,20 @@ class MainWindowHandler(Handler):
         self.box = self.builder.get_object("box")
         self.vp_week = self.builder.get_object("viewport_week")
         self.viewport = self.builder.get_object("viewport_time_entries")
+        self.evbox_new_timeentry = self.get_widget("evbox_new_timeentry")
         # Attaching fixed widgets
         self.vp_week.add(WeekHandler().get_root_widget())
         self.viewport.add(TimeEntriesHandler().get_root_widget())
         self.get_root_widget().set_icon_from_file(get_img_path("xharvest.png"))
         if not self.oauth2.is_access_token_expired():
             self.fetch_base_data()
+        self.app_ind = MainAppIndicator([
+            ('item', 'Show', self.on_show),
+            ('item', 'Quit', lambda m: Gtk.main_quit()),
+            ])
 
     def bind_signals(self):
+        self.get_root_widget().connect("delete-event", self.on_quit)
         self.time_entries.connect(
             "time_entries_were_rendered", self.on_time_entries_were_rendered
         )
@@ -40,6 +49,26 @@ class MainWindowHandler(Handler):
         )
         self.oauth2.connect("user_authenticated", self.on_user_authenticated)
         self.oauth2.connect("user_signout", self.on_user_signout)
+
+        self.bind_accel_groups()
+
+    def bind_accel_groups(self):
+        self.ag_1 = self.preferences.get_accel_group(
+                Shortcuts.SHOW_TIME_ENTRY_FORM,
+                self.on_show_time_entry_form_kb,
+                )
+        self.ag_2 = self.preferences.get_accel_group(
+                Shortcuts.SHOW_TODAYS_ENTRIES,
+                self.on_back_to_today_kb,
+                )
+        # self.ag_3 = self.preferences.get_accel_group(
+        #         Shortcuts.SHOW_TIME_SUMMARY,
+        #         self.on_show_time_summary_kb,
+        #         )
+        # Re-attaching
+        self.get_root_widget().add_accel_group(self.ag_1)
+        self.get_root_widget().add_accel_group(self.ag_2)
+        # self.get_root_widget().add_accel_group(self.ag_3)
 
     # ----------------------------------------------------------------[Helpers]
 
@@ -69,10 +98,33 @@ class MainWindowHandler(Handler):
             w.show_all()
             w.popup()
 
+    # FIXME show/hide is breaking the main window
+    def on_show(self, *args):
+        # self.get_root_widget().show()  #.set_visible(True)
+        self.get_root_widget().deiconify()
+        self.get_root_widget().present()
+
     def on_quit(self, *args):
-        Gtk.main_quit()
+        print(args)
+        if self.preferences.get_minimize_to_tray_icon():
+            self.get_root_widget().hide()  #.set_visible(False)
+            return True
+        else:
+            Gtk.main_quit()
 
     # ----------------------------------------------------------[Model Signals]
+
+    def on_show_time_entry_form_kb(self, *args):
+        self.on_evbox_new_timeentry_button_press_event(
+            self.evbox_new_timeentry,
+            None,
+            )
+
+    def on_back_to_today_kb(self, *args):
+        self.week.set_selected_date(datetime.now())
+        self.week.emit("selected_date_changed")
+        self.time_entries.date_obj = self.week.get_selected_date()
+        GtkThread(target=self.time_entries.fetch_data,).start()
 
     def on_user_authenticated(self, gobj):
         self.fetch_base_data()
