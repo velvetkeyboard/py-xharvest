@@ -2,7 +2,7 @@
 
 ## Description
 
-Unofficial Linux GTK based Harvest desktop app.
+Unofficial Harvest desktop app for Linux
 
 ## OS Dependencies
 
