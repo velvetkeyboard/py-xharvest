@@ -32,7 +32,7 @@ class TimeSummary(GObject.GObject):
         self.week = 0.0
         self.month = 0.0
         week_bgn = (date_obj + timedelta(0 - date_obj.weekday())).date()
-        week_end = (date_obj + timedelta(6 - date_obj.weekday())).date()
+        week_end = (date_obj + timedelta(5 - date_obj.weekday())).date()
         if self.data:
             for time_entry in self.data:
                 spent_date = time_entry["spent_date"]
@@ -41,6 +41,6 @@ class TimeSummary(GObject.GObject):
                     self.today += time_entry["hours"]
                 elif spent_date == date_obj.date() - timedelta(days=1):
                     self.yesterday += time_entry["hours"]
-                elif spent_date >= week_bgn and spent_date <= week_end:
+                if spent_date >= week_bgn and spent_date <= week_end:
                     self.week += time_entry["hours"]
                 self.month += time_entry["hours"]
