@@ -35,7 +35,6 @@ class TimeEntryFormHandler(Handler):
             bf.set_text(self.time_entry["notes"])
             ent_hours.set_text(str(self.time_entry["hours"]))
             self.builder.get_object("labelDeleteTimeEntry").show()
-            self.get_widget("buttonCreateOrUpateNewTimeEntry").hide()
         else:
             self.builder.get_object("labelDeleteTimeEntry").hide()
             self.get_widget("buttonCreateOrUpateNewTimeEntry").show()
