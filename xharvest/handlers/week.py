@@ -1,5 +1,6 @@
 from xharvest.utils import remove_all_children
 from xharvest.threads import GtkThread
+from xharvest.threads import gtk_thread_cb
 from xharvest.handlers.base import Handler
 from xharvest.handlers.weekday import WeekDayHandler
 
@@ -20,7 +21,13 @@ class WeekHandler(Handler):
     def fetch_new_time_entries(self):
         self.week.emit("selected_date_changed")
         self.time_entries.date_obj = self.week.get_selected_date()
-        GtkThread(target=self.time_entries.fetch_data,).start()
+        self.time_entries.emit('data_update_bgn')
+        GtkThread(
+            target=self.time_entries.fetch_data,
+            target_cb=gtk_thread_cb(
+                lambda t: self.time_entries.emit('data_update_end')
+                ),
+            ).start()
 
     def render(self):
         box = self.get_widget("boxWeekDays")
