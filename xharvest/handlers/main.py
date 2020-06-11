@@ -3,6 +3,7 @@ from gi.repository import Gtk
 from gi.repository import Gdk
 from xharvest.data import get_img_path
 from xharvest.threads import GtkThread
+from xharvest.threads import gtk_thread_cb
 from xharvest.models import Shortcuts
 from xharvest.handlers.base import Handler
 from xharvest.handlers.timeentries import TimeEntriesHandler
@@ -42,11 +43,13 @@ class MainWindowHandler(Handler):
     def bind_signals(self):
         self.get_root_widget().connect("delete-event", self.on_quit)
         self.time_entries.connect(
-            "time_entries_were_rendered", self.on_time_entries_were_rendered
-        )
+            "time_entries_were_rendered",
+            lambda gobj: self.spin.stop()
+            )
         self.time_entries.connect(
-            "data_update_bgn", self.on_time_entries_data_being_updated
-        )
+            "data_update_bgn",
+            lambda gobj: self.spin.start()
+            )
         self.oauth2.connect("user_authenticated", self.on_user_authenticated)
         self.oauth2.connect("user_signout", self.on_user_signout)
 
@@ -81,7 +84,13 @@ class MainWindowHandler(Handler):
         '''
         self.user.fetch_data()
         self.assignments.fetch_data()
-        GtkThread(target=self.time_entries.fetch_data).start()
+        self.time_entries.emit('data_update_bgn')
+        GtkThread(
+            target=self.time_entries.fetch_data,
+            target_cb=gtk_thread_cb(
+                lambda t: self.time_entries.emit('data_update_end')
+                ),
+            ).start()
 
     # -------------------------------------------------------[Standard Signals]
 
@@ -124,7 +133,13 @@ class MainWindowHandler(Handler):
         self.week.set_selected_date(datetime.now())
         self.week.emit("selected_date_changed")
         self.time_entries.date_obj = self.week.get_selected_date()
-        GtkThread(target=self.time_entries.fetch_data,).start()
+        self.time_entries.emit('data_update_bgn')
+        GtkThread(
+            target=self.time_entries.fetch_data,
+            target_cb=gtk_thread_cb(
+                lambda t: self.time_entries.emit('data_update_end')
+                ),
+            ).start()
 
     def on_user_authenticated(self, gobj):
         self.fetch_base_data()
@@ -133,9 +148,3 @@ class MainWindowHandler(Handler):
     def on_user_signout(self, gobj):
         self.get_root_widget().hide()
         LoginHandler().get_root_widget().show_all()
-
-    def on_time_entries_were_rendered(self, gobj):
-        self.spin.stop()
-
-    def on_time_entries_data_being_updated(self, gobj):
-        self.spin.start()
