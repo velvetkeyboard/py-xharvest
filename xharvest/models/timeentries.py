@@ -38,12 +38,10 @@ class TimeEntries(GObject.GObject):
         return ret
 
     def fetch_data(self):
-        self.emit("data_update_bgn")
         self.data = WeekTimeEntriesService(self.oauth2, self.date_obj,).all()[
             "time_entries"
         ]
         logger.debug("TimeEntries.fetch_data emitting data_update_end")
-        self.emit("data_update_end")
 
     def get_by_id(self, _id):
         for data in self.data:
