@@ -13,7 +13,7 @@ def gtk_thread_cb(func):
     return wrapper
 
 
-def gtk_thread_method_cb(func):  # TODO rename to gtk_thread_method_cb
+def gtk_thread_method_cb(func):
     def wrapper(obj, thread=None, *args, **kwargs):
         if thread:
             if thread.is_alive():
@@ -42,3 +42,4 @@ class GtkThread(Thread):
         if self.target_cb:
             args = [self] + list(self.target_cb_args)
             GLib.idle_add(self.target_cb, *args)
+
