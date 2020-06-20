@@ -112,6 +112,10 @@ class TimeEntryFormHandler(Handler):
             data["spent_date"] = self.week.get_selected_date()\
                                           .date()\
                                           .isoformat()
+        else:
+            if self.time_entry["is_running"]:
+                del data["hours"]
+
         GtkThread(
             target=self.time_entries.save,
             args=(self.time_entry_id, data),
