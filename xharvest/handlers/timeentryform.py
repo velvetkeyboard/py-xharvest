@@ -35,6 +35,9 @@ class TimeEntryFormHandler(Handler):
             bf.set_text(self.time_entry["notes"])
             ent_hours.set_text(str(self.time_entry["hours"]))
             self.builder.get_object("labelDeleteTimeEntry").show()
+            if self.time_entry['is_running']:
+                ent_hours.set_editable(False)
+                ent_hours.set_can_focus(False)
         else:
             self.builder.get_object("labelDeleteTimeEntry").hide()
             self.get_widget("buttonCreateOrUpateNewTimeEntry").show()
@@ -85,6 +88,7 @@ class TimeEntryFormHandler(Handler):
 
     def on_delete_time_entry(self, ev_box, gdk_ev_btn):
         self.start_spinner()
+        self.get_widget('buttonCreateOrUpateNewTimeEntry').hide()
         ev_box.hide()
         GtkThread(
             target=self.time_entries.delete,
