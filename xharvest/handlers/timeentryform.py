@@ -117,14 +117,19 @@ class TimeEntryFormHandler(Handler):
                 del data["hours"]
 
         GtkThread(
-            target=self.time_entries.save,
+            target=self.on_saving_time_entry,
             args=(self.time_entry_id, data),
             target_cb=self.on_saving_time_entry_cb,
         ).start()
 
     # -------------------------------------------------------[Thread Callbacks]
 
+    def on_saving_time_entry(self, time_entry_id, data):
+        self.time_entries.save(time_entry_id, data)
+        self.time_entries.fetch_data()
+
     @gtk_thread_method_cb
     def on_saving_time_entry_cb(self, thread=None):
         self.get_root_widget().popdown()
-        self.time_entries.emit(TimeEntries.SIGNAL_DATA_SET_CHANGED)
+        # self.time_entries.emit(TimeEntries.SIGNAL_DATA_SET_CHANGED)
+        self.time_entries.emit('data_update_end')
