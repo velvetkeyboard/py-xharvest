@@ -58,13 +58,14 @@ class TimeEntries(GObject.GObject):
                 for e in self.data:
                     if time_entry_id == e["id"]:
                         self.data.remove(e)
+                        break
                 self.data.append(resp.json())
-                logger.debug('TimeEntries.save emitting "time_entry_saved"')
-                self.emit("time_entry_saved", time_entry_id)
         else:
             resp = TimeEntryEndpoint(credential=self.oauth2).post(data=data)
             if resp.status_code == 201:
                 self.data.append(resp.json())
+                time_entry_id = resp.json()['id']
+        return time_entry_id
 
     def delete(self, time_entry_id):
         time_entry_id = int(time_entry_id)
