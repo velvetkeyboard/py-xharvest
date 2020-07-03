@@ -13,12 +13,12 @@ class Assignments(GObject.GObject):
     def __init__(self):
         super(Assignments, self).__init__()
         self.data = None
-        self.oauth2 = None
+        self.cred = None
         self.last_refresh = None
 
     def fetch_data(self):
         self.emit("data_update_bgn")
-        self.data = UsersAllAssignments(credential=self.oauth2).all()
+        self.data = UsersAllAssignments(credential=self.cred).all()
         self.last_refresh = datetime.now()
         self.emit("data_update_end")
 

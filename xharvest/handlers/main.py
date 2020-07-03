@@ -33,7 +33,7 @@ class MainWindowHandler(Handler):
         self.vp_week.add(WeekHandler().get_root_widget())
         self.viewport.add(TimeEntriesHandler().get_root_widget())
         self.get_root_widget().set_icon_from_file(get_img_path("xharvest.png"))
-        if not self.oauth2.is_access_token_expired():
+        if self.creds.is_user_authenticated():
             self.fetch_base_data()
         self.app_ind = MainAppIndicator([
             ('item', 'Show', self.on_show),
@@ -50,8 +50,8 @@ class MainWindowHandler(Handler):
             "data_update_bgn",
             lambda gobj: self.spin.start()
             )
-        self.oauth2.connect("user_authenticated", self.on_user_authenticated)
-        self.oauth2.connect("user_signout", self.on_user_signout)
+        self.creds.connect("user_authenticated", self.on_user_authenticated)
+        self.creds.connect("user_signout", self.on_user_signout)
 
         self.bind_accel_groups()
 

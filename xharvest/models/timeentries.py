@@ -21,10 +21,10 @@ class TimeEntries(GObject.GObject):
         "time_entries_were_rendered": (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
-    def __init__(self, oauth2=None, date_obj=None, data=None):
+    def __init__(self, cred=None, date_obj=None, data=None):
         super(TimeEntries, self).__init__()
         self.data = data or []
-        self.oauth2 = oauth2
+        self.cred = cred
         self.date_obj = date_obj or datetime.now()
 
     def get_total_hours_by_day(self, date_obj):
@@ -38,7 +38,7 @@ class TimeEntries(GObject.GObject):
         return ret
 
     def fetch_data(self):
-        self.data = WeekTimeEntriesService(self.oauth2, self.date_obj,).all()[
+        self.data = WeekTimeEntriesService(self.cred, self.date_obj,).all()[
             "time_entries"
         ]
         logger.debug("TimeEntries.fetch_data emitting data_update_end")
@@ -52,7 +52,7 @@ class TimeEntries(GObject.GObject):
         if time_entry_id:
             time_entry_id = int(time_entry_id)
             resp = TimeEntryUpdateEndpoint(
-                credential=self.oauth2, time_entry_id=time_entry_id,
+                credential=self.cred, time_entry_id=time_entry_id,
             ).patch(data=data)
             if resp.status_code == 200:
                 for e in self.data:
@@ -61,7 +61,7 @@ class TimeEntries(GObject.GObject):
                         break
                 self.data.append(resp.json())
         else:
-            resp = TimeEntryEndpoint(credential=self.oauth2).post(data=data)
+            resp = TimeEntryEndpoint(credential=self.cred).post(data=data)
             if resp.status_code == 201:
                 self.data.append(resp.json())
                 time_entry_id = resp.json()['id']
@@ -70,7 +70,7 @@ class TimeEntries(GObject.GObject):
     def delete(self, time_entry_id):
         time_entry_id = int(time_entry_id)
         resp = TimeEntryUpdateEndpoint(
-            credential=self.oauth2, time_entry_id=time_entry_id,
+            credential=self.cred, time_entry_id=time_entry_id,
         ).delete()
         if resp.status_code == 200:
             # idx = -1

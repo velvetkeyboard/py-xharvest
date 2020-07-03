@@ -5,7 +5,7 @@ from xharvest.models import TimeEntries
 from xharvest.models import Week
 from xharvest.models import User
 from xharvest.models import Assignments
-from xharvest.models import OAuth2CredentialManager
+from xharvest.models import CredentialManager
 from xharvest.models import Preferences
 from gi.repository import Gtk
 
@@ -15,7 +15,7 @@ class Handler(object):
     widgets = []
     root_widget = "root"
     # global_signals = GlobalSignals()
-    oauth2 = OAuth2CredentialManager()
+    creds = CredentialManager()
     user = User()
     time_entries = TimeEntries()
     week = Week()
@@ -38,12 +38,12 @@ class Handler(object):
         # self.get_root_widget().show_all()
 
     def initialize_gobjects(self):
-        if not self.user.oauth2:
-            self.user.oauth2 = self.oauth2.get_credential()
-        if not self.assignments.oauth2:
-            self.assignments.oauth2 = self.oauth2.get_credential()
-        if not self.time_entries.oauth2:
-            self.time_entries.oauth2 = self.oauth2.get_credential()
+        if not self.user.cred:
+            self.user.cred = self.creds.get_credential()
+        if not self.assignments.cred:
+            self.assignments.cred = self.creds.get_credential()
+        if not self.time_entries.cred:
+            self.time_entries.cred = self.creds.get_credential()
 
     def bind_signals(self):
         pass

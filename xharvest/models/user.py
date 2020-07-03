@@ -19,13 +19,13 @@ class User(GObject.GObject):
         "avatar_download_end": (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
-    def __init__(self, oauth2=None, data=None):
+    def __init__(self, cred=None, data=None):
         super(User, self).__init__()
         self.data = data
-        self.oauth2 = oauth2
+        self.cred = cred
 
     def fetch_data(self):
-        self.data = CurrentUser(self.oauth2).get()
+        self.data = CurrentUser(self.cred).get()
 
     def get_avatar_img_file_path(self):
         file_path = os.path.expanduser(self.USER_AVATAR_PATH)

@@ -11,17 +11,17 @@ class TimeSummary(GObject.GObject):
         "data_update_end": (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
-    def __init__(self, oauth2=None, data=None):
+    def __init__(self, cred=None, data=None):
         super(TimeSummary, self).__init__()
         self.data = data or []
-        self.oauth2 = oauth2
+        self.cred = cred
         self.today = 0.0
         self.yesterday = 0.0
         self.week = 0.0
         self.month = 0.0
 
     def fetch_data(self, date_obj):
-        svc = MonthTimeEntries(self.oauth2)
+        svc = MonthTimeEntries(self.cred)
         svc.set_month(date_obj.year, date_obj.month)
         self.data = svc.all()["time_entries"]
         self.gen_summary(date_obj)

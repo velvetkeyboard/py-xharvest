@@ -11,7 +11,7 @@ class TimeSummaryHandler(Handler):
     def bind_signals(self):
         self.preferences.connect(
                 'show_time_summary', self.on_show_time_summary_kb)
-        self.time_summary = TimeSummary(self.oauth2.get_credential())
+        self.time_summary = TimeSummary(self.creds.get_credential())
         self.time_summary.connect("data_update_end", self.render)
         self.fetch_time_summary()
 
