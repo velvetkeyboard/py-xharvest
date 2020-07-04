@@ -3,3 +3,7 @@ exclude = build/*,dist/*,extra/*,flatpak/*,__pycache__/*,env/*,.git/*
 max-line-length = 80
 per-file-ignores =
     ./xharvest/ui.py:E402,F401
+    ./xharvest/tray.py:E402
+    ./xharvest/notifications.py:E402
+    ./xharvest/models/__init__.py:E402,F401,F403
+    ./xharvest/handlers/__init__.py:E402,F401,F403
