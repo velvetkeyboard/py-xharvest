@@ -1,26 +1,27 @@
 from datetime import datetime
-from harvest.services import UsersAllAssignments
 from gi.repository import GObject
+from harvest.services import UsersAllAssignments
+from xharvest.models.base import HarvestGObject
 
 
-class Assignments(GObject.GObject):
+class Assignments(HarvestGObject):
 
     __gsignals__ = {
         "data_update_bgn": (GObject.SIGNAL_RUN_FIRST, None, ()),
         "data_update_end": (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
-    def __init__(self):
-        super(Assignments, self).__init__()
-        self.data = None
-        self.oauth2 = None
-        self.last_refresh = None
-
-    def fetch_data(self):
+    def sync_data(self):
+        self.log('sync_data', 'bgn')
+        self.log('sync_data', 'emitting', '"data_update_bgn"')
         self.emit("data_update_bgn")
-        self.data = UsersAllAssignments(credential=self.oauth2).all()
+        self.log('sync_data', 'fetching remote data')
+        self.data = UsersAllAssignments(credential=self.get_credential()).all()
+        # self.log('sync_data', 'remote data', self.data)
         self.last_refresh = datetime.now()
+        self.log('sync_data', 'emitting', '"data_update_end"')
         self.emit("data_update_end")
+        self.log('sync_data', 'end')
 
     def get_tasks(self, proj_id):
         for a in self.data:

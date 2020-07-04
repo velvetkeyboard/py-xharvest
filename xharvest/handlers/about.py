@@ -4,15 +4,13 @@ from xharvest import __author__
 from xharvest import __author_email__
 from xharvest import __license__
 from xharvest import __app_name__
+from xharvest.utils import get_gravatar_img_as_pixbuf
 from xharvest.logger import logger
 from xharvest.data import get_img_path
-from xharvest.models import Author
 from xharvest.handlers.base import Handler
 
 
 class AboutHandler(Handler):
-    template = "about"
-    author = Author()
 
     def bind_data(self):
         # ---------------------------------------------------[Logo and Version]
@@ -30,10 +28,10 @@ class AboutHandler(Handler):
         self.builder.get_object("label_app_year").set_markup(
             f"🄯 2020 - {year_now} {__app_name__}"
         )
-        # ---------------------------------------------------==[Author Section]
+        # ----------------------------------------------------[Author Section]
         self.builder.get_object("label_app_author_name")\
             .set_markup(f"{__author__}")
         self.builder.get_object("label_app_author_email")\
             .set_markup(f"{__author_email__}")
         self.builder.get_object("img_app_author_avatar")\
-            .set_from_pixbuf(self.author.get_avatar_img_as_pixbuf())
+            .set_from_pixbuf(get_gravatar_img_as_pixbuf(__author_email__))

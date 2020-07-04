@@ -4,10 +4,11 @@ from gi.repository import GObject
 from gi.repository import Gio
 from gi.repository.GdkPixbuf import Pixbuf
 from harvest.services import CurrentUser
-from xharvest.logger import logger
 from xharvest.data import get_img_path
+from xharvest.models.base import HarvestGObject
 
-class User(GObject.GObject):
+
+class User(HarvestGObject):
 
     USER_AVATAR_PATH = "~/.xharvest/user_avatar.jpg"
     USER_AVATAR_PLACEHOLDER = get_img_path("rubberduck.jpg")
@@ -19,13 +20,9 @@ class User(GObject.GObject):
         "avatar_download_end": (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
-    def __init__(self, oauth2=None, data=None):
-        super(User, self).__init__()
-        self.data = data
-        self.oauth2 = oauth2
-
-    def fetch_data(self):
-        self.data = CurrentUser(self.oauth2).get()
+    def sync_data(self):
+        self.log('sync_data', 'bgn')
+        self.data = CurrentUser(self.get_credential()).get()
 
     def get_avatar_img_file_path(self):
         file_path = os.path.expanduser(self.USER_AVATAR_PATH)
@@ -34,10 +31,13 @@ class User(GObject.GObject):
         return file_path
 
     def download_user_avatar(self):
+        self.log('download_user_avatar', 'bgn')
         file_path = os.path.expanduser(self.USER_AVATAR_PATH)
         if not os.path.isfile(file_path):
             url = self.data["avatar_url"]
+            self.log('download_user_avatar', 'downloading', url)
             resp = urllib.request.urlopen(url)
+            self.log('download_user_avatar', 'saving to', file_path)
             with open(file_path, "xb") as f:
                 f.write(resp.read())
 

@@ -2,15 +2,23 @@
 
 flatpak_dir=flatpak
 mode=pypi
-docker_tag=local
-builder_shell=docker run --rm -ti -w /app -v $$PWD/:/app:Z xharvest:builder bash -c 
+docker_tag=$(shell cat xharvest/__init__.py | grep __version__ | cut -b 15- | sed 's/"//g')
 
-# export HARVEST_LOGLEVEL=DEBUG
+ifeq ($(mode),docker)
+	builder_shell=docker run --rm -ti -w /app -v $$PWD/:/app:Z xharvest:builder bash -c 
+endif
+
+ifeq ($(mode),bash)
+	builder_shell=bash -c 
+endif
+
+export HARVEST_LOGLEVEL=DEBUG
 export XHARVEST_LOGLEVEL=DEBUG
 
 run:
 ifeq ($(mode),pypi)
-	./env/bin/pip install . && ./env/bin/xharvest
+	./env/bin/pip install .
+	./env/bin/xharvest
 endif
 ifeq ($(mode),flatpak)
 	cd $(flatpak_dir) && \
@@ -27,16 +35,20 @@ ifeq ($(mode),docker)
 		velvetkeyboard/xharvest:$(docker_tag)
 endif
 
-build:
-	docker build -t xharvest:builder -f Dockerfile.builder .
-ifeq ($(mode),pypi)
-	$(builder_shell) 'python setup.py sdist --formats=zip,gztar,xztar'
-	$(builder_shell) 'python setup.py bdist_wheel'
+lint:
+ifneq ($(shell env/bin/flake8 xharvest),)
+	env/bin/flake8 xharvest
+	exit 0
 endif
-ifeq ($(mode),rpm)
-	$(builder_shell) 'python setup.py bdist_rpm'
-endif
-ifeq ($(mode),flatpak)
+
+build_pypi: lint
+	env/bin/python setup.py sdist --formats=zip,gztar,xztar
+	env/bin/python setup.py bdist_wheel
+
+build_rpm: lint
+	python setup.py bdist_rpm
+
+build_flatpak: lint
 	mkdir -p flatpak/pypi/
 	pip wheel . -e .[flatpak] -w flatpak/pypi/
 	mkdir -p flatpak/build
@@ -44,10 +56,11 @@ ifeq ($(mode),flatpak)
 		flatpak-builder build-dir \
 			--force-clean \
 			org.velvetkeyboard.xHarvest.yml
-endif
-ifeq ($(mode),docker)
+
+build_docker: lint
 	docker build . -t velvetkeyboard/xharvest:$(docker_tag)
-endif
+
+build_all: build_pypi build_rpm build_flatpak build_docker
 
 todo:
 	grep -rnw xharvest -e "# TODO"

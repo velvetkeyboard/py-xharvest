@@ -12,4 +12,3 @@ class GeneralPreferencesHandler(Handler):
 
     def on_close_to_notification(self, cbtn):
         self.preferences.update_minimize_to_tray_icon(cbtn.get_active())
-

@@ -42,4 +42,3 @@ class GtkThread(Thread):
         if self.target_cb:
             args = [self] + list(self.target_cb_args)
             GLib.idle_add(self.target_cb, *args)
-

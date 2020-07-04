@@ -2,31 +2,33 @@ from datetime import timedelta
 from datetime import datetime
 from gi.repository import GObject
 from harvest.services import MonthTimeEntries
+from xharvest.models.base import HarvestGObject
 
 
-class TimeSummary(GObject.GObject):
+class TimeSummary(HarvestGObject):
 
     __gsignals__ = {
         "data_update_bgn": (GObject.SIGNAL_RUN_FIRST, None, ()),
         "data_update_end": (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
-    def __init__(self, oauth2=None, data=None):
+    def __init__(self, cred=None, data=None):
         super(TimeSummary, self).__init__()
         self.data = data or []
-        self.oauth2 = oauth2
         self.today = 0.0
         self.yesterday = 0.0
         self.week = 0.0
         self.month = 0.0
 
-    def fetch_data(self, date_obj):
-        svc = MonthTimeEntries(self.oauth2)
+    def sync_data(self, date_obj):
+        self.log('sync_data', 'bgn')
+        svc = MonthTimeEntries(self.get_credential())
         svc.set_month(date_obj.year, date_obj.month)
         self.data = svc.all()["time_entries"]
         self.gen_summary(date_obj)
 
     def gen_summary(self, date_obj):
+        self.log('gen_summary', 'bgn')
         self.today = 0.0
         self.yesterday = 0.0
         self.week = 0.0

@@ -36,7 +36,6 @@ class TimeEntriesHandler(Handler):
         # lbox.show_all()
         self.time_entries.emit("time_entries_were_rendered")
 
-
     def on_time_entries_were_rendered(self, gobj):
         if self.source_remove_id:
             GLib.source_remove(self.source_remove_id)
@@ -49,9 +48,8 @@ class TimeEntriesHandler(Handler):
     def refresh_time_entries(self):
         self.time_entries.emit('data_update_bgn')
         GtkThread(
-            target=self.time_entries.fetch_data,
+            target=self.time_entries.sync_data,
             target_cb=gtk_thread_cb(
                 lambda t: self.time_entries.emit('data_update_end')
                 ),
             ).start()
-
