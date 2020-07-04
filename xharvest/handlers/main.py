@@ -2,6 +2,7 @@ from datetime import datetime
 from gi.repository import Gtk
 from gi.repository import Gdk
 from xharvest.data import get_img_path
+from xharvest.auth import AuthenticationManager
 from xharvest.threads import GtkThread
 from xharvest.threads import gtk_thread_cb
 from xharvest.models import Shortcuts
@@ -11,7 +12,8 @@ from xharvest.handlers.week import WeekHandler
 from xharvest.handlers.main_headerbar import MainHeaderBarHandler
 from xharvest.handlers.settings import SettingsHandler
 from xharvest.handlers.timeentry import TimeEntryFormHandler
-from xharvest.handlers.login import LoginHandler
+# from xharvest.handlers.login_oauth2 import LoginOAuth2Handler
+from xharvest.handlers.login_pat import LoginPersonalAccessTokenHandler
 from xharvest.tray import MainAppIndicator
 
 
@@ -33,7 +35,7 @@ class MainWindowHandler(Handler):
         self.vp_week.add(WeekHandler().get_root_widget())
         self.viewport.add(TimeEntriesHandler().get_root_widget())
         self.get_root_widget().set_icon_from_file(get_img_path("xharvest.png"))
-        if self.creds.is_user_authenticated():
+        if AuthenticationManager().is_user_authenticated():
             self.fetch_base_data()
         self.app_ind = MainAppIndicator([
             ('item', 'Show', self.on_show),
@@ -50,8 +52,8 @@ class MainWindowHandler(Handler):
             "data_update_bgn",
             lambda gobj: self.spin.start()
             )
-        self.creds.connect("user_authenticated", self.on_user_authenticated)
-        self.creds.connect("user_signout", self.on_user_signout)
+        self.auth_flow.connect("user_authenticated", self.on_user_authenticated)
+        self.auth_flow.connect("user_signout", self.on_user_signout)
 
         self.bind_accel_groups()
 
@@ -82,11 +84,11 @@ class MainWindowHandler(Handler):
             with some part of the UI and see no reaction. We will slowly move
             the parts to be more and more asynchronous.
         '''
-        self.user.fetch_data()
-        self.assignments.fetch_data()
+        self.user.sync_data()
+        self.assignments.sync_data()
         self.time_entries.emit('data_update_bgn')
         GtkThread(
-            target=self.time_entries.fetch_data,
+            target=self.time_entries.sync_data,
             target_cb=gtk_thread_cb(
                 lambda t: self.time_entries.emit('data_update_end')
                 ),
@@ -109,14 +111,12 @@ class MainWindowHandler(Handler):
 
     # FIXME show/hide is breaking the main window
     def on_show(self, *args):
-        # self.get_root_widget().show()  #.set_visible(True)
         self.get_root_widget().deiconify()
         self.get_root_widget().present()
 
     def on_quit(self, *args):
-        print(args)
         if self.preferences.get_minimize_to_tray_icon():
-            self.get_root_widget().hide()  #.set_visible(False)
+            self.get_root_widget().hide()
             return True
         else:
             Gtk.main_quit()
@@ -135,7 +135,7 @@ class MainWindowHandler(Handler):
         self.time_entries.date_obj = self.week.get_selected_date()
         self.time_entries.emit('data_update_bgn')
         GtkThread(
-            target=self.time_entries.fetch_data,
+            target=self.time_entries.sync_data,
             target_cb=gtk_thread_cb(
                 lambda t: self.time_entries.emit('data_update_end')
                 ),
@@ -147,4 +147,7 @@ class MainWindowHandler(Handler):
 
     def on_user_signout(self, gobj):
         self.get_root_widget().hide()
-        LoginHandler().get_root_widget().show_all()
+        # TODO Add a LoginOptionsHandler to make the user choose between
+        # OAuth2 or PAT
+        # LoginOAuth2Handler().get_root_widget().show_all()
+        LoginPersonalAccessTokenHandler().get_root_widget().show_all()
