@@ -11,7 +11,7 @@ class TimeSummaryHandler(Handler):
     def bind_signals(self):
         self.preferences.connect(
                 'show_time_summary', self.on_show_time_summary_kb)
-        self.time_summary = TimeSummary(self.creds.get_credential())
+        self.time_summary = TimeSummary()
         self.time_summary.connect("data_update_end", self.render)
         self.fetch_time_summary()
 
@@ -34,7 +34,7 @@ class TimeSummaryHandler(Handler):
 
     def fetch_time_summary(self):
         GtkThread(
-            target=self.time_summary.fetch_data,
+            target=self.time_summary.sync_data,
             args=(self.week.get_selected_date(),),
             target_cb=gtk_thread_cb(
                 lambda t: self.time_summary.emit("data_update_end")

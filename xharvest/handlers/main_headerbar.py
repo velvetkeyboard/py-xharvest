@@ -1,5 +1,6 @@
 from datetime import datetime
 from xharvest.threads import GtkThread
+from xharvest.threads import gtk_thread_cb
 from xharvest.handlers.base import Handler
 from xharvest.handlers.time_summary import TimeSummaryHandler
 
@@ -27,7 +28,12 @@ class MainHeaderBarHandler(Handler):
         self.week.set_selected_date(datetime.now())
         self.week.emit("selected_date_changed")
         self.time_entries.date_obj = self.week.get_selected_date()
-        GtkThread(target=self.time_entries.fetch_data,).start()
+        GtkThread(
+            target=self.time_entries.sync_data,
+            target_cb=gtk_thread_cb(
+                lambda t: self.time_entries.emit("data_update_end")
+            ),
+            ).start()
 
     def on_show_time_summary(self, ev_box, ev_btn):
         widget = TimeSummaryHandler().get_root_widget()
