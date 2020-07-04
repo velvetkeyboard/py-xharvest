@@ -1,11 +1,10 @@
 import re
 from xharvest.data import get_template_path
-# from xharvest.models import CustomSignals as GlobalSignals
 from xharvest.models import TimeEntries
 from xharvest.models import Week
 from xharvest.models import User
 from xharvest.models import Assignments
-from xharvest.models import CredentialManager
+from xharvest.models import AuthenticationFlow
 from xharvest.models import Preferences
 from gi.repository import Gtk
 
@@ -14,14 +13,13 @@ class Handler(object):
     template = ""
     widgets = []
     root_widget = "root"
-    # global_signals = GlobalSignals()
-    creds = CredentialManager()
+    re_pattern = re.compile(r"(?<!^)(?=[A-Z])")
+    auth_flow = AuthenticationFlow()
     user = User()
+    assignments = Assignments()
     time_entries = TimeEntries()
     week = Week()
-    assignments = Assignments()
     preferences = Preferences()
-    re_pattern = re.compile(r"(?<!^)(?=[A-Z])")
 
     def __init__(self, builder=None):
         self.builder = builder or Gtk.Builder()
@@ -31,19 +29,10 @@ class Handler(object):
         else:
             self.builder.add_from_file(self.get_template())
         self.builder.connect_signals(self)
-        self.initialize_gobjects()
         self.bind_signals()
         self.bind_data()
         # self.builder.get_object(self.root_widget).show_all()
         # self.get_root_widget().show_all()
-
-    def initialize_gobjects(self):
-        if not self.user.cred:
-            self.user.cred = self.creds.get_credential()
-        if not self.assignments.cred:
-            self.assignments.cred = self.creds.get_credential()
-        if not self.time_entries.cred:
-            self.time_entries.cred = self.creds.get_credential()
 
     def bind_signals(self):
         pass
