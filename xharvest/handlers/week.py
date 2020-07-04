@@ -23,7 +23,7 @@ class WeekHandler(Handler):
         self.time_entries.date_obj = self.week.get_selected_date()
         self.time_entries.emit('data_update_bgn')
         GtkThread(
-            target=self.time_entries.fetch_data,
+            target=self.time_entries.sync_data,
             target_cb=gtk_thread_cb(
                 lambda t: self.time_entries.emit('data_update_end')
                 ),

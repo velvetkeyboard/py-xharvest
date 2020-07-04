@@ -1,7 +1,6 @@
 from xharvest.threads import GtkThread
 from xharvest.threads import gtk_thread_method_cb
 from xharvest.handlers.base import Handler
-from xharvest.models import TimeEntries
 
 
 class TimeEntryFormHandler(Handler):
@@ -126,7 +125,7 @@ class TimeEntryFormHandler(Handler):
 
     def on_saving_time_entry(self, time_entry_id, data):
         self.time_entries.save(time_entry_id, data)
-        self.time_entries.fetch_data()
+        self.time_entries.sync_data()
 
     @gtk_thread_method_cb
     def on_saving_time_entry_cb(self, thread=None):

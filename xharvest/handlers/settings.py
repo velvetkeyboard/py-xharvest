@@ -1,6 +1,7 @@
 from gi.repository import Gtk
 from xharvest.threads import GtkThread
 from xharvest.threads import gtk_thread_cb
+from xharvest.auth import AuthenticationManager
 from xharvest.handlers.base import Handler
 from xharvest.handlers.about import AboutHandler
 from xharvest.handlers.preferences import PreferencesHandler
@@ -17,10 +18,10 @@ class SettingsHandler(Handler):
         self.get_widget("label_user_avatar").set_from_pixbuf(
             self.user.get_avatar_img_as_pixbuf(),
             )
-        target_cb = lambda t: self.user.emit("avatar_download_end")
         GtkThread(
             target=self.user.download_user_avatar,
-            target_cb=gtk_thread_cb(target_cb),
+            target_cb=gtk_thread_cb(
+                lambda t: self.user.emit("avatar_download_end")),
             ).start()
 
     def bind_signals(self):
@@ -49,8 +50,8 @@ class SettingsHandler(Handler):
         AboutHandler().get_root_widget().show_all()
 
     def on_signout(self, ev_box, gdk_ev_btn):
-        self.oauth2.wipe()
-        self.oauth2.emit("user_signout")
+        AuthenticationManager().wipe()
+        self.auth_flow.emit("user_signout")
 
     def on_quit(self, *args):
         Gtk.main_quit()

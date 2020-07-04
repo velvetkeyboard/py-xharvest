@@ -14,15 +14,16 @@ class ShortcutEntryHandler(Handler):
 
     def bind_data(self):
         self.label_shortcut_name = self.get_widget('label_shortcut_name')
-        # self.label_shortcut_keybind = self.get_widget('label_shortcut_keybind')
+        # self.label_shortcut_keybind = self.get_widget(
+        # 'label_shortcut_keybind')
         self.btn_shortcut_remap = self.get_widget('btn_shortcut_remap')
 
         self.label_shortcut_name.set_label(self.shortcut_name)
         self.btn_shortcut_remap.set_label(
-                f'{self.shortcut_bind["mod_key"]} + {self.shortcut_bind["key"]}')
+                f'{self.shortcut_bind["mod_key"]} + \
+                {self.shortcut_bind["key"]}')
 
     def on_remapping(self, btn):
-        print('remapping...')
         if not self.flag:
             self.flag = True
             self.btn_shortcut_remap.set_label('...')
@@ -31,7 +32,6 @@ class ShortcutEntryHandler(Handler):
         if self.flag:
             keyname = Gdk.keyval_name(gdk_eventkey.keyval)
             keyname = keyname.split('_')[0]
-            print('keyname', keyname)
             if not self.new_mod_key:
                 self.new_mod_key = keyname
             elif not self.new_key:
@@ -47,5 +47,5 @@ class ShortcutEntryHandler(Handler):
                 self.new_mod_key = None
                 self.new_key = None
                 self.btn_shortcut_remap.set_label(
-                    f'{self.shortcut_bind["mod_key"]} + {self.shortcut_bind["key"]}')
-
+                    f'{self.shortcut_bind["mod_key"]} + \
+                    {self.shortcut_bind["key"]}')
