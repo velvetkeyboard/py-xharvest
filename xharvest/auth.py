@@ -46,9 +46,9 @@ class AuthenticationManager(object):
 
     def get_access_token_authorization_url(self):
         return "{}/{}?client_id={}&response_type=token".format(
-                'oauth2/authorize',
+                "oauth2/authorize",
                 self.domain,
-                self.get_client_id(),
+                self.get_secret("client_id"),
             )
 
     # --------------------------------------------------[Personal Access Token]
@@ -67,8 +67,8 @@ class AuthenticationManager(object):
             if not resp.get('error'):
                 return True
         elif auth_method == self.OAUTH2_METHOD:
-            if keyring.get_password("xharvest", "access_token"):
-                exp_in_sec = self.get_expiration_in_secs()
+            if self.get_secret("access_token"):
+                exp_in_sec = self.get_secret("expires_in")
                 last_request_date = self.get_last_request_date()
                 if exp_in_sec and last_request_date:
                     exp_delta = timedelta(seconds=int(exp_in_sec))
@@ -89,6 +89,7 @@ class AuthenticationManager(object):
             return OAuth2Credential(access_token, scope,)
 
     def wipe(self):
+        # TODO Maybe set this as a attribute?
         keys = [
             "access_token",
             "client_secret",
