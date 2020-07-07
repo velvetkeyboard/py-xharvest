@@ -8,6 +8,16 @@ from gi.repository import GObject
 CONFIG_PATH = os.path.expanduser('~/.xharvest/config.json')
 
 
+def config_changes(func):
+    def wrapper(obj, *args, **kwargs):
+        cfg = obj.get_config()
+        ret = func(obj, cfg, *args, **kwargs)
+        obj.save_config(cfg)
+        return ret
+
+    return wrapper
+
+
 class Shortcuts:
     SHOW_TIME_ENTRY_FORM = 'new_time_entry'
     SHOW_TODAYS_ENTRIES = 'back_today'
@@ -48,16 +58,13 @@ class Preferences(GObject.GObject):
             })
         return json.load(open(CONFIG_PATH, 'r'))
 
-    def update_shortcut_config(self, name, mod_key, key):
-        cfg = self.get_config()
-        cfg['shortcuts'][name]['mod_key'] = mod_key
-        cfg['shortcuts'][name]['key'] = key
-        self.save_config(cfg)
+    @config_changes
+    def update_shortcut_config(self, cfg, name, mod_key, key):
+        cfg['shortcuts'][name] = {'mod_key': mod_key, 'key': key}
 
-    def update_minimize_to_tray_icon(self, val):
-        cfg = self.get_config()
+    @config_changes
+    def update_minimize_to_tray_icon(self, cfg, val):
         cfg['try_icon'] = val
-        self.save_config(cfg)
 
     def get_minimize_to_tray_icon(self):
         return self.get_config()['try_icon']
