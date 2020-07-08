@@ -21,14 +21,12 @@ class TimeSummary(HarvestGObject):
         self.month = 0.0
 
     def sync_data(self, date_obj):
-        self.log('sync_data', 'bgn')
         svc = MonthTimeEntries(self.get_credential())
         svc.set_month(date_obj.year, date_obj.month)
         self.data = svc.all()["time_entries"]
         self.gen_summary(date_obj)
 
     def gen_summary(self, date_obj):
-        self.log('gen_summary', 'bgn')
         self.today = 0.0
         self.yesterday = 0.0
         self.week = 0.0
