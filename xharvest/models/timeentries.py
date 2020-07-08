@@ -34,14 +34,10 @@ class TimeEntries(HarvestGObject):
         return ret
 
     def sync_data(self):
-        self.log('sync_data', 'bgn')
         self.data = WeekTimeEntriesService(
             self.get_credential(), self.date_obj,).all()["time_entries"]
-        # self.log('sync_data', 'data', self.data)
-        self.log('sync_data', 'end')
 
     def get_by_id(self, uid):
-        self.log('get_by_id', uid)
         for data in self.data:
             if int(data["id"]) == int(uid):
                 self.log('get_by_id', 'returning', data)
