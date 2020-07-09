@@ -21,7 +21,6 @@ class User(HarvestGObject):
     }
 
     def sync_data(self):
-        self.log('sync_data', 'bgn')
         self.data = CurrentUser(self.get_credential()).get()
 
     def get_avatar_img_file_path(self):
@@ -31,7 +30,6 @@ class User(HarvestGObject):
         return file_path
 
     def download_user_avatar(self):
-        self.log('download_user_avatar', 'bgn')
         file_path = os.path.expanduser(self.USER_AVATAR_PATH)
         if not os.path.isfile(file_path):
             url = self.data["avatar_url"]
