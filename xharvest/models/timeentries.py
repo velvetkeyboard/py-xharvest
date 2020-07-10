@@ -40,7 +40,6 @@ class TimeEntries(HarvestGObject):
     def get_by_id(self, uid):
         for data in self.data:
             if int(data["id"]) == int(uid):
-                self.log('get_by_id', 'returning', data)
                 return data
 
     def save(self, time_entry_id, data):

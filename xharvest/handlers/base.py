@@ -6,6 +6,7 @@ from xharvest.models import User
 from xharvest.models import Assignments
 from xharvest.models import AuthenticationFlow
 from xharvest.models import Preferences
+from xharvest.auth import AuthenticationManager
 from gi.repository import Gtk
 
 
@@ -33,6 +34,9 @@ class Handler(object):
         self.bind_data()
         # self.builder.get_object(self.root_widget).show_all()
         # self.get_root_widget().show_all()
+
+    def is_user_authenticated(self):
+        return AuthenticationManager().is_user_authenticated()
 
     def bind_signals(self):
         pass
