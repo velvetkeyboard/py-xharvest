@@ -3,7 +3,6 @@ from datetime import timedelta
 import keyring
 from harvest.credentials import PersonalAccessAuthCredential
 from harvest.credentials import OAuth2Credential
-from harvest.services import CurrentUser
 
 
 class AuthenticationManager(object):
@@ -62,9 +61,9 @@ class AuthenticationManager(object):
     def is_user_authenticated(self, auth_method=None):
         auth_method = auth_method or self.get_secret("auth_method")
         if auth_method == self.PAT_METHOD:
-            resp = CurrentUser(self.get_credential(auth_method)).get()
-            print(resp)
-            if not resp.get('error'):
+            account_id = keyring.get_password("xharvest", "account_id")
+            token = keyring.get_password("xharvest", "pat")
+            if account_id and token:
                 return True
         elif auth_method == self.OAUTH2_METHOD:
             if self.get_secret("access_token"):

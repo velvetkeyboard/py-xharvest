@@ -12,8 +12,7 @@ from xharvest.handlers.week import WeekHandler
 from xharvest.handlers.main_headerbar import MainHeaderBarHandler
 from xharvest.handlers.settings import SettingsHandler
 from xharvest.handlers.timeentry import TimeEntryFormHandler
-# from xharvest.handlers.login_oauth2 import LoginOAuth2Handler
-from xharvest.handlers.login_pat import LoginPersonalAccessTokenHandler
+from xharvest.handlers.login import LoginHandler
 from xharvest.tray import MainAppIndicator
 
 
@@ -147,7 +146,5 @@ class MainWindowHandler(Handler):
 
     def on_user_signout(self, gobj):
         self.get_root_widget().hide()
-        # TODO Add a LoginOptionsHandler to make the user choose between
-        # OAuth2 or PAT
-        # LoginOAuth2Handler().get_root_widget().show_all()
-        LoginPersonalAccessTokenHandler().get_root_widget().show_all()
+        # LoginHandler().get_root_widget().show_all()
+        LoginHandler().get_root_widget().present()

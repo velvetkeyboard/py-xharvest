@@ -7,7 +7,6 @@ from gi.repository.WebKit2 import WebView
 from gi.repository.WebKit2 import Settings
 from xharvest.handlers.main import MainWindowHandler
 from xharvest.handlers.login import LoginHandler
-from xharvest.handlers.login_pat import LoginPersonalAccessTokenHandler
 from xharvest.auth import AuthenticationManager
 from xharvest.data import get_css_path
 
@@ -34,8 +33,7 @@ def main():
     handler.get_root_widget().show_all()
 
     if not AuthenticationManager().is_user_authenticated():
-        # TODO we need to create a "select you auth method" intermediary UI
-        LoginPersonalAccessTokenHandler().get_root_widget().show_all()
+        LoginHandler().get_root_widget().show_all()
         handler.get_root_widget().hide()
 
     Gtk.main()

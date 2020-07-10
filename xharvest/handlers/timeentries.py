@@ -40,16 +40,18 @@ class TimeEntriesHandler(Handler):
         if self.source_remove_id:
             GLib.source_remove(self.source_remove_id)
             self.source_remove_id = None
-        self.source_remove_id = GLib.timeout_add_seconds(
-            self.PULLING_DELAY,
-            self.refresh_time_entries,
-            )
+        if self.is_user_authenticated():
+            self.source_remove_id = GLib.timeout_add_seconds(
+                self.PULLING_DELAY,
+                self.refresh_time_entries,
+                )
 
     def refresh_time_entries(self):
-        self.time_entries.emit('data_update_bgn')
-        GtkThread(
-            target=self.time_entries.sync_data,
-            target_cb=gtk_thread_cb(
-                lambda t: self.time_entries.emit('data_update_end')
-                ),
-            ).start()
+        if self.is_user_authenticated():
+            self.time_entries.emit('data_update_bgn')
+            GtkThread(
+                target=self.time_entries.sync_data,
+                target_cb=gtk_thread_cb(
+                    lambda t: self.time_entries.emit('data_update_end')
+                    ),
+                ).start()
