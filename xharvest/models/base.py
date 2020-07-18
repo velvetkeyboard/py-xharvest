@@ -19,4 +19,4 @@ class HarvestGObject(GObject.GObject):
         raise NotImplementedError
 
     def log(self, *args):
-        print(self.__class__.__name__, *args)
+        pass

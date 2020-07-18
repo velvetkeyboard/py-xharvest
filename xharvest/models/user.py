@@ -33,9 +33,7 @@ class User(HarvestGObject):
         file_path = os.path.expanduser(self.USER_AVATAR_PATH)
         if not os.path.isfile(file_path):
             url = self.data["avatar_url"]
-            self.log('download_user_avatar', 'downloading', url)
             resp = urllib.request.urlopen(url)
-            self.log('download_user_avatar', 'saving to', file_path)
             with open(file_path, "xb") as f:
                 f.write(resp.read())
 

@@ -92,7 +92,6 @@ class TimeEntryHandler(Handler):
     def on_toggle_chronometer(self, ev_box, gdk_ev_btn):
         time_entry = self.time_entries.get_by_id(self.time_entry_id)
         if time_entry["is_running"]:
-            print(f"time entry #{self.time_entry_id} will stop running now")
             GtkThread(
                 target=self.stop_chronometer,
                 target_cb=self.stop_chronometer_cb,
