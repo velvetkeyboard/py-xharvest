@@ -18,7 +18,7 @@ Unofficial Harvest desktop app for Linux
 
 ## Install
 
-### PIP (not yet working)
+### PIP
 
 `pip install --user xharvest`
 
