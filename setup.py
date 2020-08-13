@@ -29,12 +29,13 @@ data_files = [
 setup(
     name=__app_name__,
     version=__version__,
-    url='https://github.com/velvetkeyboad/py-xharvest',
+    url='https://gitlab.com/velvetkeyboad/py-xharvest',
     author=__author__,
     author_email=__author_email__,
     license=__license__,
     description='Unofficial Harvest desktop for Linux',
     long_description=__long_description__,
+    long_description_content_type='text/markdown',
     install_requires=[
         'pycairo==1.19.1',
         'PyGObject==3.34.0',
