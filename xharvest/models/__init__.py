@@ -1,6 +1,4 @@
 from xharvest.models.assignments import *
-from xharvest.models.author import *
-from xharvest.models.data import *
 from xharvest.models.hour import *
 from xharvest.models.auth import *
 from xharvest.models.timeentries import *
