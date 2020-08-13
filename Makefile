@@ -1,8 +1,30 @@
 .PHONY: build
 
+export HARVEST_LOGLEVEL=DEBUG
+export XHARVEST_LOGLEVEL=DEBUG
+
 flatpak_dir=flatpak
 mode=pypi
-docker_tag=$(shell cat xharvest/__init__.py | grep __version__ | cut -b 15- | sed 's/"//g')
+company=velvetkeyboard
+project=xharvest
+
+# [Virtualenv Bins]
+# -----------------------------------------------------------------------------
+venv=env
+python=$(venv)/bin/python
+linter=$(venv)/bin/flake8
+
+# [Semver]
+# -----------------------------------------------------------------------------
+git_version=$(shell git rev-parse --abbrev-ref HEAD | cut -b 9-)
+xharvest_version=$(shell $(python) -m xharvest.__init__)
+docker_tag=$(xharvest_version)
+
+check_semver:
+ifneq ($(git_version),$(xharvest_version))
+	@echo "$(git_version) != $(xharvest_version)"
+	@exit 1
+endif
 
 ifeq ($(mode),docker)
 	builder_shell=docker run --rm -ti -w /app -v $$PWD/:/app:Z xharvest:builder bash -c 
@@ -11,9 +33,6 @@ endif
 ifeq ($(mode),bash)
 	builder_shell=bash -c 
 endif
-
-export HARVEST_LOGLEVEL=DEBUG
-export XHARVEST_LOGLEVEL=DEBUG
 
 run:
 ifeq ($(mode),pypi)
@@ -36,31 +55,7 @@ ifeq ($(mode),docker)
 endif
 
 lint:
-ifneq ($(shell env/bin/flake8 xharvest),)
-	env/bin/flake8 xharvest
-	exit 0
-endif
-
-build_pypi: lint
-	env/bin/python setup.py sdist --formats=zip,gztar,xztar
-	env/bin/python setup.py bdist_wheel
-
-build_rpm: lint
-	python setup.py bdist_rpm
-
-build_flatpak: lint
-	mkdir -p flatpak/pypi/
-	pip wheel . -e .[flatpak] -w flatpak/pypi/
-	mkdir -p flatpak/build
-	cd $(flatpak_dir) && \
-		flatpak-builder build-dir \
-			--force-clean \
-			org.velvetkeyboard.xHarvest.yml
-
-build_docker: lint
-	docker build . -t velvetkeyboard/xharvest:$(docker_tag)
-
-build_all: build_pypi build_rpm build_flatpak build_docker
+	$(linter) xharvest/
 
 todo:
 	grep -rnw xharvest -e "# TODO"
@@ -79,3 +74,46 @@ update_assets:
 	cp -f assets/logo-48.png data/hicolor/48x48/xharvest.png
 	cp -f assets/logo-128.png data/hicolor/128x128/xharvest.png
 	cp -f assets/logo-128.png xharvest/data/img/xharvest.png
+
+# [Building]
+# -----------------------------------------------------------------------------
+
+build_pypi: lint
+	$(python) setup.py sdist --formats=zip,gztar,xztar
+	$(python) setup.py bdist_wheel
+
+build_rpm: lint
+	$(python) setup.py bdist_rpm
+
+build_flatpak: lint
+	mkdir -p flatpak/pypi/
+	pip wheel . -e .[flatpak] -w flatpak/pypi/
+	mkdir -p flatpak/build
+	cd $(flatpak_dir) && \
+		flatpak-builder build-dir \
+			--force-clean \
+			org.velvetkeyboard.xHarvest.yml
+
+build_docker: lint
+	docker build . -t $(company)/$(project):$(docker_tag)
+
+build_all: build_pypi build_rpm build_flatpak build_docker
+
+# [Publish]
+# -----------------------------------------------------------------------------
+
+pypi=test
+
+ifeq ($(pypi),test)
+	pypi_url=https://test.pypi.org/legacy/
+endif
+ifeq ($(pypi),production)
+	pypi_url=https://upload.pypi.org/legacy/
+endif
+
+
+publish_pypi: check_semver build_pypi
+	twine upload \
+		--repository-url $(pypi_url) \
+		dist/harvest_api-$(git_version)-py3-none-any.whl
+
