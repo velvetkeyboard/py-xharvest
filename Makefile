@@ -16,7 +16,7 @@ linter=$(venv)/bin/flake8
 
 # [Semver]
 # -----------------------------------------------------------------------------
-git_version=$(shell git rev-parse --abbrev-ref HEAD | cut -b 9-)
+git_version=$(shell git describe --tags)
 xharvest_version=$(shell $(python) -m xharvest.__init__)
 docker_tag=$(xharvest_version)
 
@@ -115,5 +115,5 @@ endif
 publish_pypi: check_semver build_pypi
 	twine upload \
 		--repository-url $(pypi_url) \
-		dist/harvest_api-$(git_version)-py3-none-any.whl
+		dist/xharvest-$(xharvest_version)-py3-none-any.whl
 
