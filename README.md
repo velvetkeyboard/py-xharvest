@@ -9,8 +9,12 @@ Unofficial Harvest desktop app for Linux
 - gcc
 - python3
 - python3-devel
-- cairo-devel
 - gtk3
+- cairo-devel
+- cairo-gobject-devel
+- gobject-introspection
+- gobject-introspection-devel
+- webkit2gtk3
 
 ## Install
 
@@ -20,9 +24,11 @@ Unofficial Harvest desktop app for Linux
 
 ### Source
 
-- `git clone https://github.com/velvetkeyboard/py-xharvest`
-- `cd py-xharvest`
-- `pip install --user .`
+```
+git clone https://github.com/velvetkeyboard/py-xharvest && \
+    cd py-xharvest/ && \
+    pip install --user .
+```
 
 ### Flatpak (not yet working)
 
