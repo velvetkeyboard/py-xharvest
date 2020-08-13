@@ -41,6 +41,7 @@ class Preferences(GObject.GObject):
             # TODO let's try move it out to the setup flow
             os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
             self.save_config({
+                "tray_icon": False,
                 "shortcuts": {
                     Shortcuts.SHOW_TIME_ENTRY_FORM: {
                         "mod_key": "Control",
@@ -64,10 +65,10 @@ class Preferences(GObject.GObject):
 
     @config_changes
     def update_minimize_to_tray_icon(self, cfg, val):
-        cfg['try_icon'] = val
+        cfg['tray_icon'] = val
 
     def get_minimize_to_tray_icon(self):
-        return self.get_config()['try_icon']
+        return self.get_config()['tray_icon']
 
     def save_config(self, content):
         with open(CONFIG_PATH, 'w') as f:
